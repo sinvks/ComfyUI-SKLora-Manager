@@ -1,0 +1,368 @@
+{
+    "system_presets": [
+        {
+            "name": "Qwen",
+            "category": "image",
+            "order": 1,
+            "aliases": [
+                "qwen-vl",
+                "qwen2"
+            ]
+        },
+        {
+            "name": "Z Image Turbo",
+            "category": "image",
+            "order": 2,
+            "aliases": [
+                "z-image-turbo"
+            ]
+        },
+        {
+            "name": "Flux.1 D",
+            "category": "image",
+            "order": 3,
+            "aliases": [
+                "flux.1-d",
+                "flux-d",
+                "flux_dev"
+            ]
+        },
+        {
+            "name": "Flux.1 Kontext",
+            "category": "image",
+            "order": 4,
+            "aliases": [
+                "flux-kontext"
+            ]
+        },
+        {
+            "name": "Flux.1 Krea",
+            "category": "image",
+            "order": 5,
+            "aliases": [
+                "flux-krea"
+            ]
+        },
+        {
+            "name": "Flux.2 D",
+            "category": "image",
+            "order": 6,
+            "aliases": [
+                "flux.2-d"
+            ]
+        },
+        {
+            "name": "NoobAI",
+            "category": "image",
+            "order": 7,
+            "aliases": [
+                "noob-ai",
+                "noobai-xl"
+            ]
+        },
+        {
+            "name": "Flux.1 S",
+            "category": "image",
+            "order": 8,
+            "aliases": [
+                "flux.1-s",
+                "flux-s",
+                "flux_schnell"
+            ]
+        },
+        {
+            "name": "SD 1.5",
+            "category": "image",
+            "order": 9,
+            "aliases": [
+                "sd1.5",
+                "sd15",
+                "v1.5"
+            ]
+        },
+        {
+            "name": "HiDream",
+            "category": "image",
+            "order": 10,
+            "aliases": [
+                "hidream"
+            ]
+        },
+        {
+            "name": "Hunyuan 1",
+            "category": "image",
+            "order": 11,
+            "aliases": [
+                "hunyuan-1",
+                "hy-1"
+            ]
+        },
+        {
+            "name": "Illustrious",
+            "category": "image",
+            "order": 12,
+            "aliases": [
+                "illustrious-xl"
+            ]
+        },
+        {
+            "name": "Kolors",
+            "category": "image",
+            "order": 13,
+            "aliases": [
+                "kolors"
+            ]
+        },
+        {
+            "name": "Lumina",
+            "category": "image",
+            "order": 14,
+            "aliases": [
+                "lumina-t2i"
+            ]
+        },
+        {
+            "name": "Other",
+            "category": "image",
+            "order": 15,
+            "aliases": [
+                "unknown",
+                "misc"
+            ]
+        },
+        {
+            "name": "PixArt α",
+            "category": "image",
+            "order": 16,
+            "aliases": [
+                "pixart-alpha",
+                "pixart_alpha"
+            ]
+        },
+        {
+            "name": "PixArt Σ",
+            "category": "image",
+            "order": 17,
+            "aliases": [
+                "pixart-sigma",
+                "pixart_sigma"
+            ]
+        },
+        {
+            "name": "Pony",
+            "category": "image",
+            "order": 18,
+            "aliases": [
+                "pony-diffusion",
+                "pd-v6"
+            ]
+        },
+        {
+            "name": "Pony V7",
+            "category": "image",
+            "order": 19,
+            "aliases": [
+                "pony-v7",
+                "pd-v7"
+            ]
+        },
+        {
+            "name": "SD 1.4",
+            "category": "image",
+            "order": 20,
+            "aliases": [
+                "sd1.4",
+                "sd14"
+            ]
+        },
+        {
+            "name": "SD 1.5 Hyper",
+            "category": "image",
+            "order": 21,
+            "aliases": [
+                "sd15-hyper"
+            ]
+        },
+        {
+            "name": "SD 1.5 LCM",
+            "category": "image",
+            "order": 22,
+            "aliases": [
+                "sd15-lcm"
+            ]
+        },
+        {
+            "name": "SD 2.0",
+            "category": "image",
+            "order": 23,
+            "aliases": [
+                "sd2.0"
+            ]
+        },
+        {
+            "name": "SD 2.1",
+            "category": "image",
+            "order": 24,
+            "aliases": [
+                "sd2.1"
+            ]
+        },
+        {
+            "name": "Aura Flow",
+            "category": "image",
+            "order": 25,
+            "aliases": [
+                "auraflow",
+                "aura-flow"
+            ]
+        },
+        {
+            "name": "SDXL 1.0",
+            "category": "image",
+            "order": 26,
+            "aliases": [
+                "sdxl",
+                "sdxl-base"
+            ]
+        },
+        {
+            "name": "Chroma",
+            "category": "image",
+            "order": 27,
+            "aliases": [
+                "chroma-sdxl"
+            ]
+        },
+        {
+            "name": "SDXL Hyper",
+            "category": "image",
+            "order": 28,
+            "aliases": [
+                "sdxl-hyper"
+            ]
+        },
+        {
+            "name": "SDXL Lightning",
+            "category": "image",
+            "order": 29,
+            "aliases": [
+                "sdxl-lightning"
+            ]
+        },
+        {
+            "name": "Wan Video 2.2 T2V-A14B",
+            "category": "video",
+            "order": 1,
+            "aliases": [
+                "wan2.2-t2v-a14b"
+            ]
+        },
+        {
+            "name": "Wan Video 2.2 I2V-A14B",
+            "category": "video",
+            "order": 2,
+            "aliases": [
+                "wan2.2-i2v-a14b"
+            ]
+        },
+        {
+            "name": "Wan Video 2.2 T12V-5B",
+            "category": "video",
+            "order": 3,
+            "aliases": [
+                "wan2.2-5b"
+            ]
+        },
+        {
+            "name": "Hunyuan Video",
+            "category": "video",
+            "order": 4,
+            "aliases": [
+                "hunyuanvideo",
+                "hy-video"
+            ]
+        },
+        {
+            "name": "CogVideoX",
+            "category": "video",
+            "order": 5,
+            "aliases": [
+                "cogvideox",
+                "cogvideo"
+            ]
+        },
+        {
+            "name": "LTXV",
+            "category": "video",
+            "order": 6,
+            "aliases": [
+                "ltx-video",
+                "ltxv"
+            ]
+        },
+        {
+            "name": "Wan Video 1.3B t2v",
+            "category": "video",
+            "order": 7,
+            "aliases": [
+                "wan-1.3b-t2v"
+            ]
+        },
+        {
+            "name": "Wan Video 14B i2v 480p",
+            "category": "video",
+            "order": 8,
+            "aliases": [
+                "wan-14b-i2v-480p"
+            ]
+        },
+        {
+            "name": "Wan Video 14B i2v 720p",
+            "category": "video",
+            "order": 9,
+            "aliases": [
+                "wan-14b-i2v-720p"
+            ]
+        },
+        {
+            "name": "Mochi",
+            "category": "video",
+            "order": 10,
+            "aliases": [
+                "mochi-1",
+                "mochi_preview"
+            ]
+        },
+        {
+            "name": "Wan Video 14B t2v",
+            "category": "video",
+            "order": 11,
+            "aliases": [
+                "wan-14b-t2v"
+            ]
+        },
+        {
+            "name": "Wan Video 2.5 I2V",
+            "category": "video",
+            "order": 12,
+            "aliases": [
+                "wan2.5-i2v"
+            ]
+        },
+        {
+            "name": "Wan Video 2.5 T2V",
+            "category": "video",
+            "order": 13,
+            "aliases": [
+                "wan2.5-t2v"
+            ]
+        }
+    ],
+    "user_custom": [
+        {
+            "name": "Wan",
+            "category": "custom",
+            "order": 1000
+        }
+    ]
+}

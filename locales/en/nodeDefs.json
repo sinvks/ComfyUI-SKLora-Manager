@@ -1,0 +1,154 @@
+{
+  "SK_LoraLoaderManager": {
+    "display_name": "SK LoRA Loader",
+    "inputs": {
+      "model": { "name": "Model", "tooltip": "Model" },
+      "clip": { "name": "CLIP", "tooltip": "CLIP" },
+      "lora_stack": { "name": "LoRA Stack", "tooltip": "LoRA Stack JSON" },
+      "selector_mode": { "name": "Selector Mode", "tooltip": "Choose the display scheme for the LoRA selector" }
+    },
+    "outputs": {
+      "0": { "name": "MODEL", "tooltip": "MODEL" },
+      "1": { "name": "CLIP", "tooltip": "CLIP" },
+      "2": { "name": "Trigger Words", "tooltip": "Trigger words" },
+      "3": { "name": "Loaded LoRAs", "tooltip": "Loaded LoRA tags" }
+    }
+  },
+  "SK_LoraMetaExtractor": {
+    "display_name": "SK LoRA Meta Extractor",
+    "inputs": {
+      "image": { "name": "Image", "tooltip": "Input image" },
+      "optimize_output": { "name": "Optimize Output", "tooltip": "Optimize output" },
+      "compress_level": { "name": "Compress Level", "tooltip": "Compression level" }
+    },
+    "outputs": {
+      "0": { "name": "Info JSON", "tooltip": "Metadata JSON" },
+      "1": { "name": "Clean Image", "tooltip": "Cleaned image" },
+      "2": { "name": "Workflow Raw", "tooltip": "Workflow raw" },
+      "3": { "name": "Prompt Raw", "tooltip": "Prompt raw" }
+    }
+  },
+  "SK_LoraMetaInspector": {
+    "display_name": "SK LoRA Meta Inspector",
+    "inputs": {
+      "info_json": { "name": "Info JSON", "tooltip": "Metadata JSON" }
+    }
+  },
+  "SK_PromptMatrix_V1": {
+    "display_name": "SK Prompt Matrix Sampler V1",
+    "inputs": {
+      "text_input": { "name": "Text Input", "tooltip": "Text input" },
+      "pick_count": { "name": "Pick Count", "tooltip": "Number of lines/segments to pick (0 = all)" },
+      "sort_mode": {
+        "name": "Sort Mode",
+        "tooltip": "Order of combination",
+        "options": { "Sequential": "Sequential", "Random": "Random" }
+      },
+      "input_sep": { "name": "Input Separator", "tooltip": "Separator for splitting candidates inside a line" },
+      "output_sep": { "name": "Output Separator", "tooltip": "Separator for joining output tokens" },
+      "seed": { "name": "Seed", "tooltip": "Random seed" }
+    },
+    "outputs": {
+      "0": { "name": "String", "tooltip": "Result string" }
+    }
+  },
+  "SK_PromptMatrix_V2": {
+    "display_name": "SK Prompt Matrix Sampler V2",
+    "inputs": {
+      "pick_count": { "name": "Pick Count", "tooltip": "Number of lines/segments to pick (0 = all)" },
+      "sort_mode": {
+        "name": "Sort Mode",
+        "tooltip": "Order of combination",
+        "options": { "Sequential": "Sequential", "Random": "Random" }
+      },
+      "input_sep": { "name": "Input Separator", "tooltip": "Separator for splitting candidates inside a line" },
+      "output_sep": { "name": "Output Separator", "tooltip": "Separator for joining output tokens" },
+      "seed": { "name": "Seed", "tooltip": "Random seed" },
+      "raw_text": { "name": "Raw Text", "tooltip": "Raw text" }
+    },
+    "outputs": {
+      "0": { "name": "String", "tooltip": "Result string" }
+    }
+  },
+  "SK_PromptMatrix_V3": {
+    "display_name": "SK Prompt Matrix Sampler V3",
+    "inputs": {
+      "pick_ids": { "name": "Pick IDs", "tooltip": "Pick line indices (e.g. 1,2,3; 0 = all)" },
+      "sort_mode": {
+        "name": "Sort Mode",
+        "tooltip": "Order of combination",
+        "options": { "Sequential": "Sequential", "Random": "Random" }
+      },
+      "input_sep": { "name": "Input Separator", "tooltip": "Separator for splitting candidates inside a line" },
+      "output_sep": { "name": "Output Separator", "tooltip": "Separator for joining output tokens" },
+      "seed": { "name": "Seed", "tooltip": "Random seed" },
+      "raw_text": { "name": "Raw Text", "tooltip": "Raw text" }
+    },
+    "outputs": {
+      "0": { "name": "String", "tooltip": "Result string" }
+    }
+  },
+  "SK_MergePrompt": {
+    "display_name": "SK Merge Prompt",
+    "inputs": {
+      "string_1": { "name": "String 1", "tooltip": "Input string 1" },
+      "string_2": { "name": "String 2", "tooltip": "Input string 2" },
+      "string_3": { "name": "String 3", "tooltip": "Input string 3" },
+      "string_4": { "name": "String 4", "tooltip": "Input string 4" },
+      "string_5": { "name": "String 5", "tooltip": "Input string 5" },
+      "string_6": { "name": "String 6", "tooltip": "Input string 6" },
+      "string_7": { "name": "String 7", "tooltip": "Input string 7" },
+      "string_8": { "name": "String 8", "tooltip": "Input string 8" },
+      "string_9": { "name": "String 9", "tooltip": "Input string 9" },
+      "string_10": { "name": "String 10", "tooltip": "Input string 10" },
+      "string_11": { "name": "String 11", "tooltip": "Input string 11" },
+      "string_12": { "name": "String 12", "tooltip": "Input string 12" },
+      "string_13": { "name": "String 13", "tooltip": "Input string 13" },
+      "string_14": { "name": "String 14", "tooltip": "Input string 14" },
+      "string_15": { "name": "String 15", "tooltip": "Input string 15" },
+      "string_16": { "name": "String 16", "tooltip": "Input string 16" },
+      "string_17": { "name": "String 17", "tooltip": "Input string 17" },
+      "string_18": { "name": "String 18", "tooltip": "Input string 18" },
+      "string_19": { "name": "String 19", "tooltip": "Input string 19" },
+      "string_20": { "name": "String 20", "tooltip": "Input string 20" },
+      "input_count": { "name": "Input Count", "tooltip": "Number of inputs to enable" },
+      "preset_sep": {
+        "name": "Preset Separator",
+        "tooltip": "Select a preset separator. If custom separator is not empty, this option is ignored. (No distinction between English and Chinese: ,=，, .=。)"
+      },
+      "custom_sep": { "name": "Custom Separator", "tooltip": "Custom separator" },
+      "remove_newlines": { "name": "Remove Newlines", "tooltip": "Remove newlines" },
+      "remove_empty_lines": { "name": "Remove Empty Lines", "tooltip": "Remove empty lines" },
+      "sep_as_segment": { "name": "Separator As Segment", "tooltip": "Treat separator as its own segment" }
+    },
+    "outputs": {
+      "0": { "name": "String", "tooltip": "Merged string" }
+    }
+  },
+  "SK_PointIndexer": {
+    "display_name": "SK Point Indexer",
+    "inputs": {
+      "image": { "name": "Image", "tooltip": "Input image" },
+      "points_data": { "name": "Points Data", "tooltip": "Points JSON" }
+    },
+    "outputs": {
+      "0": { "name": "Image", "tooltip": "Annotated image" },
+      "1": { "name": "JSON Points", "tooltip": "Points JSON" }
+    }
+  },
+  "SK_InteractiveEditor": {
+    "display_name": "SK Interactive Editor",
+    "inputs": {
+      "image": { "name": "Image", "tooltip": "Input image" },
+      "points_data": { "name": "Points Data", "tooltip": "Points JSON" },
+      "mask_data": { "name": "Mask Data", "tooltip": "Mask data" }
+    },
+    "outputs": {
+      "0": { "name": "Images", "tooltip": "Composited images" },
+      "1": { "name": "Mask", "tooltip": "Mask" },
+      "2": { "name": "Image Doodle", "tooltip": "Doodle image" },
+      "3": { "name": "Image Points", "tooltip": "Points image" },
+      "4": { "name": "JSON Points", "tooltip": "Points JSON" }
+    }
+  }
+}

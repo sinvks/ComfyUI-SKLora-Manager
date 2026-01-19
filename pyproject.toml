@@ -1,0 +1,31 @@
+[project]
+name = "comfyui-sklora-manager"
+description = "A powerful LoRA manager for ComfyUI with preview, tagging, and multi-node distribution support."
+version = "1.0.0"
+readme = "readme.md"
+license = {file = "LICENSE"}
+keywords = ["comfyui", "lora", "manager", "tagging", "llm"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+authors = [
+    {name = "sinvks"}
+]
+dependencies = [
+    "aiohttp",
+    "requests",
+    "opencv-python-headless",
+    "Pillow",
+    "numpy",
+    "beautifulsoup4"
+]
+
+[project.urls]
+Repository = "https://github.com/sinvks/ComfyUI-SKLora-Manager"
+
+[tool.comfy]
+PublisherId = "sinvks"
+DisplayName = "ComfyUI-SKLoRA-Manager"
+Icon = "https://raw.githubusercontent.com/sinvks/ComfyUI-SKLora-Manager/main/assets/logo.svg"

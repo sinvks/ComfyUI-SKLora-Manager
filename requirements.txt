@@ -1,0 +1,6 @@
+aiohttp
+requests
+opencv-python-headless
+Pillow
+numpy
+beautifulsoup4

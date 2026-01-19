@@ -1,0 +1,154 @@
+{
+  "SK_LoraLoaderManager": {
+    "display_name": "SK LoRA 載入器",
+    "inputs": {
+      "model": { "name": "模型", "tooltip": "模型" },
+      "clip": { "name": "CLIP", "tooltip": "CLIP" },
+      "lora_stack": { "name": "LoRA 堆疊", "tooltip": "LoRA 堆疊 JSON" },
+      "selector_mode": { "name": "選擇器方案", "tooltip": "選擇 LoRA 選擇器的顯示方案" }
+    },
+    "outputs": {
+      "0": { "name": "模型", "tooltip": "模型" },
+      "1": { "name": "CLIP", "tooltip": "CLIP" },
+      "2": { "name": "觸發詞", "tooltip": "觸發詞" },
+      "3": { "name": "已載入 LoRA", "tooltip": "已載入的 LoRA 標籤" }
+    }
+  },
+  "SK_LoraMetaExtractor": {
+    "display_name": "SK LoRA 元資料擷取器",
+    "inputs": {
+      "image": { "name": "圖片", "tooltip": "輸入圖片" },
+      "optimize_output": { "name": "最佳化輸出", "tooltip": "最佳化輸出" },
+      "compress_level": { "name": "壓縮等級", "tooltip": "壓縮等級" }
+    },
+    "outputs": {
+      "0": { "name": "資訊 JSON", "tooltip": "元資料 JSON" },
+      "1": { "name": "乾淨圖片", "tooltip": "清理後的圖片" },
+      "2": { "name": "工作流原始", "tooltip": "工作流原始文字" },
+      "3": { "name": "提示詞原始", "tooltip": "提示詞原始文字" }
+    }
+  },
+  "SK_LoraMetaInspector": {
+    "display_name": "SK LoRA 元資料檢視器",
+    "inputs": {
+      "info_json": { "name": "資訊 JSON", "tooltip": "元資料 JSON" }
+    }
+  },
+  "SK_PromptMatrix_V1": {
+    "display_name": "SK 提示詞矩陣取樣 V1",
+    "inputs": {
+      "text_input": { "name": "文字輸入", "tooltip": "文字輸入" },
+      "pick_count": { "name": "選取數量", "tooltip": "選取的行/段數，預設為0，表示選取所有" },
+      "sort_mode": {
+        "name": "排序模式",
+        "tooltip": "預設為Sequential（按行/段順序組合），Random表示按隨機順序組合",
+        "options": { "Sequential": "順序", "Random": "隨機" }
+      },
+      "input_sep": { "name": "輸入分隔符", "tooltip": "輸入文字的分隔符" },
+      "output_sep": { "name": "輸出分隔符", "tooltip": "輸出文字的分隔符" },
+      "seed": { "name": "種子", "tooltip": "隨機種子" }
+    },
+    "outputs": {
+      "0": { "name": "字串", "tooltip": "結果字串" }
+    }
+  },
+  "SK_PromptMatrix_V2": {
+    "display_name": "SK 提示詞矩陣取樣 V2",
+    "inputs": {
+      "pick_count": { "name": "選取數量", "tooltip": "選取的行/段數，預設為0，表示選取所有" },
+      "sort_mode": {
+        "name": "排序模式",
+        "tooltip": "預設為Sequential（按行/段順序組合），Random表示按隨機順序組合",
+        "options": { "Sequential": "順序", "Random": "隨機" }
+      },
+      "input_sep": { "name": "輸入分隔符", "tooltip": "輸入文字的分隔符" },
+      "output_sep": { "name": "輸出分隔符", "tooltip": "輸出文字的分隔符" },
+      "seed": { "name": "種子", "tooltip": "隨機種子" },
+      "raw_text": { "name": "原始文字", "tooltip": "原始文字" }
+    },
+    "outputs": {
+      "0": { "name": "字串", "tooltip": "結果字串" }
+    }
+  },
+  "SK_PromptMatrix_V3": {
+    "display_name": "SK 提示詞矩陣取樣 V3",
+    "inputs": {
+      "pick_ids": { "name": "選取序號", "tooltip": "所選行/段序號，格式為「1,2,3」，輸入0表示所有行/段" },
+      "sort_mode": {
+        "name": "排序模式",
+        "tooltip": "預設為Sequential（按pick_ids順序組合），Random表示按隨機順序組合",
+        "options": { "Sequential": "順序", "Random": "隨機" }
+      },
+      "input_sep": { "name": "輸入分隔符", "tooltip": "輸入文字的分隔符" },
+      "output_sep": { "name": "輸出分隔符", "tooltip": "輸出文字的分隔符" },
+      "seed": { "name": "種子", "tooltip": "隨機種子" },
+      "raw_text": { "name": "原始文字", "tooltip": "原始文字" }
+    },
+    "outputs": {
+      "0": { "name": "字串", "tooltip": "結果字串" }
+    }
+  },
+  "SK_MergePrompt": {
+    "display_name": "SK 合併提示詞",
+    "inputs": {
+      "string_1": { "name": "文字 1", "tooltip": "輸入文字 1" },
+      "string_2": { "name": "文字 2", "tooltip": "輸入文字 2" },
+      "string_3": { "name": "文字 3", "tooltip": "輸入文字 3" },
+      "string_4": { "name": "文字 4", "tooltip": "輸入文字 4" },
+      "string_5": { "name": "文字 5", "tooltip": "輸入文字 5" },
+      "string_6": { "name": "文字 6", "tooltip": "輸入文字 6" },
+      "string_7": { "name": "文字 7", "tooltip": "輸入文字 7" },
+      "string_8": { "name": "文字 8", "tooltip": "輸入文字 8" },
+      "string_9": { "name": "文字 9", "tooltip": "輸入文字 9" },
+      "string_10": { "name": "文字 10", "tooltip": "輸入文字 10" },
+      "string_11": { "name": "文字 11", "tooltip": "輸入文字 11" },
+      "string_12": { "name": "文字 12", "tooltip": "輸入文字 12" },
+      "string_13": { "name": "文字 13", "tooltip": "輸入文字 13" },
+      "string_14": { "name": "文字 14", "tooltip": "輸入文字 14" },
+      "string_15": { "name": "文字 15", "tooltip": "輸入文字 15" },
+      "string_16": { "name": "文字 16", "tooltip": "輸入文字 16" },
+      "string_17": { "name": "文字 17", "tooltip": "輸入文字 17" },
+      "string_18": { "name": "文字 18", "tooltip": "輸入文字 18" },
+      "string_19": { "name": "文字 19", "tooltip": "輸入文字 19" },
+      "string_20": { "name": "文字 20", "tooltip": "輸入文字 20" },
+      "input_count": { "name": "接入數量", "tooltip": "修改接入提示詞的數量。使用時先修改數量，再點擊底部的【修改提示詞接入數量】。" },
+      "preset_sep": {
+        "name": "預設分隔符",
+        "tooltip": "選擇一個預設分隔符。若自訂分隔符不為空，則此選項會被忽略。（不區分中英文：,=，.=。）"
+      },
+      "custom_sep": { "name": "自訂分隔符", "tooltip": "輸入自訂分隔符。若此項不為空，則使用此分隔符。" },
+      "remove_newlines": { "name": "移除換行符", "tooltip": "移除換行符" },
+      "remove_empty_lines": { "name": "移除空行", "tooltip": "移除空行" },
+      "sep_as_segment": { "name": "分隔符獨立成段", "tooltip": "如果勾選，合併後的每個【提示詞輸入框】片段將由換行符 + 分隔符 + 換行符連接。此時，輸入框內部的分隔符將不會被用於拆分。如果分隔符本身是換行，則使用雙換行符連接（\\n\\n）。" }
+    },
+    "outputs": {
+      "0": { "name": "字串", "tooltip": "合併後的字串" }
+    }
+  },
+  "SK_PointIndexer": {
+    "display_name": "SK 點位編號器",
+    "inputs": {
+      "image": { "name": "圖片", "tooltip": "輸入圖片" },
+      "points_data": { "name": "點位資料", "tooltip": "點位 JSON" }
+    },
+    "outputs": {
+      "0": { "name": "圖片", "tooltip": "標註後的圖片" },
+      "1": { "name": "JSON 點位", "tooltip": "點位 JSON" }
+    }
+  },
+  "SK_InteractiveEditor": {
+    "display_name": "SK 互動編輯器",
+    "inputs": {
+      "image": { "name": "圖片", "tooltip": "輸入圖片" },
+      "points_data": { "name": "點位資料", "tooltip": "點位 JSON" },
+      "mask_data": { "name": "遮罩資料", "tooltip": "遮罩資料" }
+    },
+    "outputs": {
+      "0": { "name": "圖片組", "tooltip": "合成圖片組" },
+      "1": { "name": "遮罩", "tooltip": "遮罩" },
+      "2": { "name": "塗鴉圖片", "tooltip": "塗鴉圖片" },
+      "3": { "name": "點位圖片", "tooltip": "點位圖片" },
+      "4": { "name": "JSON 點位", "tooltip": "點位 JSON" }
+    }
+  }
+}
