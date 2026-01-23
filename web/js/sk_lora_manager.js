@@ -262,8 +262,8 @@
             style.textContent = `
                 .sk-svg-icon { display: inline-block; vertical-align: middle; flex-shrink: 0; }
                 .sk-ui-panel { background: #1a1a1e !important; border: 1px solid #3e3e42; border-radius: 8px; padding: 10px; color: #e0e0e0; width: 100%; box-sizing: border-box; overflow: visible !important; display: flex; flex-direction: column; height: auto !important; }
-                /* 确保 ComfyUI 的 DOMWidget 容器不会限制高度 */
-                .comfy-multiline-input, .comfy-node-widget-content { height: auto !important; }
+                /* 确保 ComfyUI 的 DOMWidget 容器不会限制高度 (仅针对本插件) */
+                .comfy-node-widget-content:has(.sk-ui-panel) { height: auto !important; }
                 /* 滑动开关 */
                 .sk-switch { position: relative; display: inline-block; width: 28px; height: 16px; cursor: pointer; flex-shrink: 0; vertical-align: middle; }
                 .sk-switch input { opacity: 0; width: 0; height: 0; }

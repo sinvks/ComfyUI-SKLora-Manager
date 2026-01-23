@@ -18,9 +18,9 @@ def get_version():
                 version_match = re.search(r'version\s*=\s*"([^"]+)"', content)
                 if version_match:
                     return version_match.group(1)
-        return "1.0.0"
+        return "1.0.1"
     except Exception:
-        return "1.0.0"
+        return "1.0.1"
 
 VERSION = get_version()
 

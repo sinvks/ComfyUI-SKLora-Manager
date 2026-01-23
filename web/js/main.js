@@ -194,7 +194,7 @@ app.registerExtension({
             // --- 版本信息 ---
             app.ui.settings.addSetting({
                 id: settingVersionId,
-                name: "Version: " + (window.SK_Lora_Manager_Version || "1.0.0"),
+                name: "Version: " + (window.SK_Lora_Manager_Version || "1.0.1"),
                 type: "text",
                 defaultValue: "",
                 onChange: () => {} // 只读

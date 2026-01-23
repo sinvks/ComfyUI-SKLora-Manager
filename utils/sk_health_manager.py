@@ -267,7 +267,7 @@ class SKHealthManager:
                 # 写入 manifest.json 以符合快照系统校验
                 zf.writestr("manifest.json", json.dumps({
                     "backup_time": now.timestamp(), 
-                    "version": "1.0.0",
+                    "version": "1.0.1",
                     "type": "auto_sync",
                     "signature": "sk-lora-manager",
                     "files": [os.path.basename(f) for f in files_to_zip]

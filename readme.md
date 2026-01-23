@@ -1,6 +1,6 @@
 # SK LoRA Manager - Powerful LoRA Assistant for ComfyUI
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 SK LoRA Manager is an advanced LoRA management plugin designed specifically for ComfyUI. It not only provides beautiful preview and category management functions but also integrates powerful LLM (Large Language Model) support to help you manage, search, and use your LoRA models more efficiently.

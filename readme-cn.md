@@ -1,6 +1,6 @@
 # SK LoRA Manager - ComfyUI 强大 LoRA 管理助手
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 SK LoRA Manager 是一款专为 ComfyUI 设计的高级 LoRA 管理插件。它不仅提供美观的预览和分类管理功能，还集成了强大的 LLM（大语言模型）支持，帮助您更高效地管理、搜索和使用您的 LoRA 模型。
