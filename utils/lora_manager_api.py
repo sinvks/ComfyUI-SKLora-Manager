@@ -947,7 +947,7 @@ def clean_trigger_words(triggers):
                 
     return result
 
-async def process_lora_sync(path, file_hash, helper, settings, dry_run=False, keep_alive=None):
+async def process_lora_sync(path, file_hash, helper, settings, dry_run=False, keep_alive=None, locale="en-US"):
     """
     处理单个 LoRA 与 Civitai 的数据同步。
 
@@ -1237,12 +1237,20 @@ async def process_lora_sync(path, file_hash, helper, settings, dry_run=False, ke
                                 p_text = img.get("meta").get("prompt", "")
                                 if p_text: ref_prompts.append(str(p_text)[:200] + "...") # 截断
                         
+                        lang_name = "English"
+                        if locale == "zh-CN":
+                            lang_name = "Simplified Chinese"
+                        elif locale == "zh-TW":
+                            lang_name = "Traditional Chinese"
+
                         system_prompt = (
-                            "你是一个 SD 模型专家。请分析提供的 LoRA 模型原始信息，并输出结构化的 JSON 数据：\n"
-                            "1. **weight**: 提取作者推荐的权重数值（如 0.7）。如果不确定或未提及，返回 null。\n"
-                            "2. **sampler**: 提取推荐采样器。如果不确定或未提及，返回 null。\n"
-                            "3. **notes**: 【核心任务】将作者冗长的介绍、注意事项、版本说明，重写为一段条理清晰、专业且简洁的中文备注（不超过 150 字）。"
-                            "内容应包含：模型的适用场景、核心风格描述、以及任何特殊的负面提示词或使用技巧。\n"
+                            "You are an SD model expert. Analyze the provided LoRA model information and output structured JSON:\n"
+                            "1. **weight**: Extract author recommended weight (e.g., 0.7). If unknown, return null.\n"
+                            "2. **sampler**: Extract recommended sampler. If unknown, return null.\n"
+                            "3. **notes**: Rewrite the description, notes, and version info into a concise, professional summary.\n"
+                            f"   - TARGET LANGUAGE: {lang_name} (Locale: {locale}).\n"
+                            f"   - You MUST translate and summarize into {lang_name} regardless of source language.\n"
+                            "   - Word limit: 150 words.\n"
                             "Constraint: Respond with valid JSON only: {\"weight\": float, \"sampler\": str, \"notes\": str}"
                         )
                         
@@ -1398,6 +1406,7 @@ async def fetch_civitai_info(request):
         return web.json_response({"status": "error", "message": "请求数据解析失败"}, status=400)
 
     path, file_hash = data.get("path"), data.get("hash")
+    locale = data.get("locale", "en-US")
     if not file_hash: 
         return web.json_response({"status": "error", "message": "无 Hash"})
 
@@ -1410,7 +1419,7 @@ async def fetch_civitai_info(request):
     create_snapshot_internal(prefix="auto_sync_c_")
     
     try:
-        result = await process_lora_sync(path, file_hash, helper, settings, keep_alive=0)
+        result = await process_lora_sync(path, file_hash, helper, settings, keep_alive=0, locale=locale)
         if result:
             db_manager.update_item(path, result)
             return web.json_response({"status": "success", "data": result})
@@ -1598,6 +1607,7 @@ async def fetch_civitai_diff(request):
     try:
         data = await request.json()
         path, file_hash = data.get("path"), data.get("hash")
+        locale = data.get("locale", "en-US")
         
         if not file_hash: 
             return web.json_response({"status": "error", "message": "无Hash"})
@@ -1611,7 +1621,7 @@ async def fetch_civitai_diff(request):
         try:
             # dry_run=True: 不保存图片，只返回 URL
             # keep_alive=0: 对对比同步也立即释放
-            result = await process_lora_sync(path, file_hash, helper, settings, dry_run=True, keep_alive=0)
+            result = await process_lora_sync(path, file_hash, helper, settings, dry_run=True, keep_alive=0, locale=locale)
             
             if result:
                 return web.json_response({"status": "success", "data": result})
@@ -1914,7 +1924,7 @@ class CivitaiBatchSyncManager:
             "current_item": "", "status": "idle", "details": []
         }
 
-    async def start(self, items, helper, settings):
+    async def start(self, items, helper, settings, locale="en-US"):
         """
         开始批量同步任务。
 
@@ -1932,9 +1942,9 @@ class CivitaiBatchSyncManager:
         }
         
         # 启动后台任务
-        asyncio.create_task(self._run_batch(items, helper, settings))
+        asyncio.create_task(self._run_batch(items, helper, settings, locale))
 
-    async def _run_batch(self, items, helper, settings):
+    async def _run_batch(self, items, helper, settings, locale):
         """
         内部方法: 执行批量同步逻辑。
 
@@ -1949,7 +1959,7 @@ class CivitaiBatchSyncManager:
         try:
             for item in items:
                 if self.stop_flag: break
-                tasks.append(asyncio.create_task(self._worker(item, helper, settings)))
+                tasks.append(asyncio.create_task(self._worker(item, helper, settings, locale)))
             
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
@@ -1989,7 +1999,7 @@ class CivitaiBatchSyncManager:
                 print(f"[SK-LoRA] [System] 批量同步显存释放异常: {e}")
                 print(f"[SK-LoRA] [System] 批量同步 {status}")
 
-    async def _worker(self, item, helper, settings):
+    async def _worker(self, item, helper, settings, locale):
         """
         内部方法: 单个项目的同步工作者。
 
@@ -2025,7 +2035,7 @@ class CivitaiBatchSyncManager:
                 for attempt in range(2):
                     if self.stop_flag: break
                     try:
-                        result = await process_lora_sync(path, file_hash, helper, settings)
+                        result = await process_lora_sync(path, file_hash, helper, settings, locale=locale)
                         if result:
                             db_manager.update_item(path, result)
                             # db_manager.update_item 已包含 _write_to_disk 操作，无需重复调用
@@ -2087,6 +2097,7 @@ async def sync_civitai_batch_start(request):
     try:
         data = await request.json()
         paths = data.get("paths", [])
+        locale = data.get("locale", "en-US")
         if not paths:
              return web.json_response({"status": "error", "message": "未提供路径列表"})
 
@@ -2098,7 +2109,7 @@ async def sync_civitai_batch_start(request):
         
         create_snapshot_internal(prefix="auto_sync_c_")
         
-        await batch_sync_manager.start(paths, helper, settings)
+        await batch_sync_manager.start(paths, helper, settings, locale)
         
         return web.json_response({"status": "success", "message": "批量同步已开始"})
     except Exception as e:

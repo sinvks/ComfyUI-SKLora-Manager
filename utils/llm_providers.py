@@ -339,6 +339,16 @@ LLM_TEMPLATES = {
         "base_url": "",
         "min_interval": 2.0,
         "models": []
+    },
+    "nvidia": {
+        "base_url": "https://integrate.api.nvidia.com/v1",
+        "min_interval": 2.0,
+        "models": [
+            {"name": "nvidia/llama-3.1-405b-instruct", "recommended": True},
+            {"name": "meta/llama-3.1-70b-instruct", "recommended": True},
+            {"name": "meta/llama-3.1-8b-instruct", "recommended": False},
+            {"name": "mistralai/mixtral-8x7b-instruct-v0.1", "recommended": False}
+        ]
     }
 }
 
@@ -356,7 +366,7 @@ class LLMProviderManager:
             return GeminiDrive(config)
         elif p_type == "ollama":
             return OllamaDrive(config)
-        elif p_type in ["openai", "deepseek", "groq", "zhipu", "xflow", "custom"]:
+        elif p_type in ["openai", "deepseek", "groq", "zhipu", "xflow", "custom", "nvidia"]:
             return OpenAIDrive(config)
         return None
 

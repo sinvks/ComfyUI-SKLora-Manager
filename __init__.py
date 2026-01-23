@@ -7,6 +7,13 @@ from pathlib import Path
 # 1. 获取插件根目录
 NODE_ROOT = Path(__file__).parent.resolve()
 
+# 1.1 数据初始化 (防止更新覆盖用户数据)
+try:
+    from .utils import data_manager
+    data_manager.init_data()
+except Exception as e:
+    print(f"❌[SK-LoRA] [Data] 数据初始化失败: {e}")
+
 # 2. 版本管理
 def get_version():
     """从 pyproject.toml 读取版本号"""
@@ -18,9 +25,9 @@ def get_version():
                 version_match = re.search(r'version\s*=\s*"([^"]+)"', content)
                 if version_match:
                     return version_match.group(1)
-        return "1.0.1"
+        return "1.0.2"
     except Exception:
-        return "1.0.1"
+        return "1.0.2"
 
 VERSION = get_version()
 

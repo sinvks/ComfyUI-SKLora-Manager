@@ -1,6 +1,6 @@
 # SK LoRA Manager - Powerful LoRA Assistant for ComfyUI
 
-[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
+[![Version](https://img.shields.io/badge/version-1.0.2-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 SK LoRA Manager is an advanced LoRA management plugin designed specifically for ComfyUI. It not only provides beautiful preview and category management functions but also integrates powerful LLM (Large Language Model) support to help you manage, search, and use your LoRA models more efficiently.
@@ -63,6 +63,16 @@ pip install -r requirements.txt
 - `SK Interactive Editor`: Interactive Prompt editor.
 - `SK LoRA Meta Extractor`: Model metadata extraction tool.
 - `SK Prompt Matrix`: Nodes for generating test matrices.
+
+## 📝 Changelog
+
+### v1.0.2
+- **🛡️ Data Protection Mechanism**: Implemented a new data initialization and smart merge logic. When updating the plugin, existing user data (LoRA database, configuration files, custom base models) will be fully preserved and no longer overwritten by initial templates.
+- **🤖 LLM Functionality Optimization**: Added support for NVIDIA NIM services and optimized custom LLM functionality.
+- **🔄 Sync Experience Optimization**: Modified the language setting rule for Civitai metadata import when LLM is enabled (follows plugin language settings).
+
+### v1.0.1
+- **📄 LLM Functionality Optimization**: Fixed global style conflict issues in non-Nodes 2.0 mode.
 
 ## 📄 License
 

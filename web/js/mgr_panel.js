@@ -2987,7 +2987,7 @@ applyBtn.onclick = (e) => {
                 const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 20000));
                 const fetchPromise = api.fetchApi("/lora_manager/fetch_civitai_diff", {
                     method: "POST",
-                    body: JSON.stringify({ path, hash })
+                    body: JSON.stringify({ path, hash, locale: lang.locale })
                 });
 
                 try {
@@ -3009,7 +3009,7 @@ applyBtn.onclick = (e) => {
                 const response = await api.fetchApi("/sknodes/lora_mgr/fetch_civitai", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ path, hash })
+                    body: JSON.stringify({ path, hash, locale: lang.locale })
                 });
 
                 const result = await response.json();
@@ -3277,7 +3277,7 @@ applyBtn.onclick = (e) => {
 
             const startResp = await api.fetchApi("/sknodes/lora_mgr/sync_civitai_batch_start", {
                 method: "POST",
-                body: JSON.stringify({ paths: paths })
+                body: JSON.stringify({ paths: paths, locale: lang.locale })
             });
             const startResult = await startResp.json();
             
@@ -5537,6 +5537,12 @@ applyBtn.onclick = (e) => {
 
         const buildStateFromConfig = (cfg) => {
             const provider = cfg?.provider || 'gemini';
+            
+            // 如果是新建配置，清空自定义供应商的模型缓存，避免残留上次的数据
+            if (!cfg && templates['custom']) {
+                templates['custom'].models = [];
+            }
+
             const tpl = templates[provider] || {};
             const presetModels = tpl.models || [];
             const defaultModels = {
@@ -5573,7 +5579,7 @@ applyBtn.onclick = (e) => {
                 selected_model: selectedModel,
                 min_interval: minInterval,
                 is_custom_model: isCustomModel,
-                is_url_locked: true
+                is_url_locked: provider !== 'custom'
             };
         };
 
@@ -5751,7 +5757,7 @@ applyBtn.onclick = (e) => {
             const formEl = modal.querySelector('#sk-llm-form');
             if (!formEl) return;
 
-            const providers = ['gemini', 'openai', 'deepseek', 'groq', 'ollama', 'zhipu', 'xflow', 'custom'];
+            const providers = ['gemini', 'openai', 'deepseek', 'groq', 'ollama', 'zhipu', 'xflow', 'nvidia', 'custom'];
             const currentTemplate = templates[state.provider] || {};
 
             if (!state.base_url && currentTemplate.base_url) {
@@ -5770,8 +5776,17 @@ applyBtn.onclick = (e) => {
                 .filter(m => m.recommended)
                 .map(m => m.name);
 
-            const tipContent = recommendedModels.length > 0
-                ? recommendedModels.join(', ')
+            // 自定义模型提示逻辑
+            let customHint = '';
+            if (state.provider === 'custom') {
+                customHint = `<div class="sk-llm-custom-hint" style="color: #94a3b8; margin-bottom: 12px; line-height: 1.4; font-size: 12px; display: flex; align-items: flex-start; gap: 4px; padding: 8px; background: rgba(148, 163, 184, 0.1); border-radius: 4px;">
+                    <span style="margin-top: 1px;">${Icons.get('info', '', 14)}</span>
+                    <span>${lang.t('llm_custom_hint')}</span>
+                </div>`;
+            }
+
+            const tipContent = recommendedModels.length > 0 
+                ? recommendedModels.join(', ') 
                 : (currentTemplate.models || []).slice(0, 3).map(m => m.name).join(', ');
 
             formEl.innerHTML = `
@@ -5789,6 +5804,8 @@ applyBtn.onclick = (e) => {
                             </div>
                         `).join('')}
                     </div>
+
+                    ${customHint}
 
                     <div class="sk-llm-form-group">
                         <label class="sk-llm-form-label">${lang.t('llm_alias')}</label>
@@ -5814,7 +5831,7 @@ applyBtn.onclick = (e) => {
                             ${tipContent ? `<span class="sk-llm-help-icon" title="${lang.t('llm_recommended_models')}: ${tipContent}">ⓘ</span>` : ''}
                         </label>
                         <div class="sk-llm-input-group">
-                            ${state.is_custom_model || state.provider === 'custom' ? `
+                            ${state.is_custom_model || (state.provider === 'custom' && (!currentTemplate.models || currentTemplate.models.length === 0)) ? `
                                 <input type="text" class="sk-llm-input" id="llm-model" value="${state.selected_model}" placeholder="${lang.t('llm_model_placeholder')}">
                             ` : `
                                 <select class="sk-llm-input" id="llm-model">
@@ -5831,12 +5848,10 @@ applyBtn.onclick = (e) => {
                             `}
                             <div class="sk-llm-refresh-btn" title="${lang.t('llm_refresh_models')}">${Icons.get('refresh', '', 14)}</div>
                         </div>
-                        ${state.provider !== 'custom' ? `
                         <div class="sk-llm-checkbox-group" id="llm-custom-toggle">
                             <input type="checkbox" class="sk-llm-checkbox" id="llm-custom-check" ${state.is_custom_model ? 'checked' : ''}>
                             <label class="sk-llm-checkbox-label" for="llm-custom-check">${lang.t('llm_custom_model')}</label>
                         </div>
-                        ` : ''}
                     </div>
 
                     <div class="sk-llm-form-group">
@@ -5923,7 +5938,7 @@ applyBtn.onclick = (e) => {
                         }
 
                         state.is_custom_model = false;
-                        state.is_url_locked = true;
+                        state.is_url_locked = newProvider !== 'custom';
                     }
                     renderForm();
                 };
@@ -6183,12 +6198,13 @@ applyBtn.onclick = (e) => {
         switch(provider.toLowerCase()) {
             case 'gemini': return Icons.get('gemini', '', 20);
             case 'openai': return Icons.get('bot', '', 20);
-            case 'ollama': return Icons.get('brain', '', 20);
+            case 'ollama': return Icons.get('terminal', '', 20);
             case 'deepseek': return Icons.get('deepseek', '', 20);
             case 'groq': return Icons.get('zap', '', 20);
             case 'zhipu': return Icons.get('sparkles', '', 20);
-            case 'xflow': return Icons.get('network', '', 20);
-            case 'custom': return Icons.get('cpu', '', 20);
+            case 'xflow': return Icons.get('activity', '', 20);
+            case 'nvidia': return Icons.get('cpu', '', 20);
+            case 'custom': return Icons.get('server', '', 20);
             default: return Icons.get('plug', '', 20);
         }
     }
@@ -6271,7 +6287,7 @@ applyBtn.onclick = (e) => {
         };
 
         const renderForm = () => {
-            const providers = ['gemini', 'openai', 'deepseek', 'groq', 'ollama', 'zhipu', 'xflow', 'custom'];
+            const providers = ['gemini', 'openai', 'deepseek', 'groq', 'ollama', 'zhipu', 'xflow', 'nvidia', 'custom'];
             const currentTemplate = templates[state.provider] || {};
             
             // Default Base URLs logic if not set
@@ -6285,6 +6301,15 @@ applyBtn.onclick = (e) => {
                 const isWarning = state.min_interval < 4.0;
                 intervalWarning = `<div class="sk-llm-warning-text" style="color: ${isWarning ? '#fbbf24' : '#94a3b8'}">
                     ${isWarning ? Icons.get('alert_triangle', '', 14) : Icons.get('info', '', 14)} ${lang.t('llm_gemini_interval_tip')}
+                </div>`;
+            }
+
+            // 自定义模型提示逻辑
+            let customHint = '';
+            if (state.provider === 'custom') {
+                customHint = `<div class="sk-llm-custom-hint" style="color: #94a3b8; margin-bottom: 12px; line-height: 1.4; font-size: 12px; display: flex; align-items: flex-start; gap: 4px; padding: 8px; background: rgba(148, 163, 184, 0.1); border-radius: 4px;">
+                    <span style="margin-top: 1px;">${Icons.get('info', '', 14)}</span>
+                    <span>${lang.t('llm_custom_hint')}</span>
                 </div>`;
             }
 
@@ -6315,6 +6340,8 @@ applyBtn.onclick = (e) => {
                             `).join('')}
                         </div>
 
+                        ${customHint}
+
                         <!-- Form Fields -->
                         <div class="sk-llm-form-group">
                             <label class="sk-llm-form-label">${lang.t('llm_alias')}</label>
@@ -6340,7 +6367,7 @@ applyBtn.onclick = (e) => {
                                 ${tipContent ? `<span class="sk-llm-help-icon" title="${lang.t('llm_recommended_models')}: ${tipContent}">ⓘ</span>` : ''}
                             </label>
                             <div class="sk-llm-input-group">
-                                ${state.is_custom_model || state.provider === 'custom' ? `
+                                ${state.is_custom_model || (state.provider === 'custom' && (!currentTemplate.models || currentTemplate.models.length === 0)) ? `
                                     <input type="text" class="sk-llm-input" id="llm-model" value="${state.selected_model}" placeholder="${lang.t('llm_model_placeholder')}">
                                 ` : `
                                     <select class="sk-llm-input" id="llm-model">
@@ -6357,12 +6384,10 @@ applyBtn.onclick = (e) => {
                                 `}
                                 <div class="sk-llm-refresh-btn" title="${lang.t('llm_refresh_models')}">${Icons.get('refresh', '', 14)}</div>
                             </div>
-                            ${state.provider !== 'custom' ? `
                             <div class="sk-llm-checkbox-group" id="llm-custom-toggle">
                                 <input type="checkbox" class="sk-llm-checkbox" id="llm-custom-check" ${state.is_custom_model ? 'checked' : ''}>
                                 <label class="sk-llm-checkbox-label" for="llm-custom-check">${lang.t('llm_custom_model')}</label>
                             </div>
-                            ` : ''}
                         </div>
 
                         <div class="sk-llm-form-group">
@@ -6442,7 +6467,7 @@ applyBtn.onclick = (e) => {
                         }
                         
                         state.is_custom_model = false;
-                        state.is_url_locked = true;
+                        state.is_url_locked = newProvider !== 'custom';
                     }
                     renderForm();
                 };
