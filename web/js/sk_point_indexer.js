@@ -54,7 +54,29 @@ app.registerExtension({
 
             nodeType.prototype.loadNodeImage = function(name) {
                 if (!name) return;
-                const url = api.apiURL(`/view?filename=${encodeURIComponent(name)}&type=input&t=${Date.now()}`);
+                
+                const params = new URLSearchParams();
+                if (typeof name === "string") {
+                    if (name.includes("/") || name.includes("\\")) {
+                        const sep = name.includes("/") ? "/" : "\\";
+                        const parts = name.split(sep);
+                        params.append("filename", parts.pop());
+                        params.append("subfolder", parts.join(sep));
+                    } else {
+                        params.append("filename", name);
+                    }
+                    params.append("type", "input");
+                } else if (typeof name === "object") {
+                    for (const key in name) {
+                        if (name[key] !== undefined && name[key] !== null) {
+                            params.append(key, name[key]);
+                        }
+                    }
+                    if (!params.has("type")) params.append("type", "input");
+                }
+                params.append("t", Date.now());
+                const url = api.apiURL(`/view?${params.toString()}`);
+
                 const img = new Image();
                 img.src = url;
                 img.onload = () => { 
@@ -202,7 +224,30 @@ app.registerExtension({
                 const canvas = document.getElementById("sk_indexer_canvas"), ctx = canvas.getContext("2d");
                 const editImg = new Image();
                 let tempPoints = JSON.parse(JSON.stringify(this.points)), dIdx = null;
-                editImg.src = api.apiURL(`/view?filename=${encodeURIComponent(imgW.value)}&type=input&t=${Date.now()}`);
+                
+                const params = new URLSearchParams();
+                const name = imgW.value;
+                if (typeof name === "string") {
+                    if (name.includes("/") || name.includes("\\")) {
+                        const sep = name.includes("/") ? "/" : "\\";
+                        const parts = name.split(sep);
+                        params.append("filename", parts.pop());
+                        params.append("subfolder", parts.join(sep));
+                    } else {
+                        params.append("filename", name);
+                    }
+                    params.append("type", "input");
+                } else if (typeof name === "object") {
+                    for (const key in name) {
+                        if (name[key] !== undefined && name[key] !== null) {
+                            params.append(key, name[key]);
+                        }
+                    }
+                    if (!params.has("type")) params.append("type", "input");
+                }
+                params.append("t", Date.now());
+                editImg.src = api.apiURL(`/view?${params.toString()}`);
+
                 editImg.onload = () => {
                     const r = Math.min((window.innerWidth*0.85)/editImg.width, (window.innerHeight*0.75)/editImg.height);
                     canvas.width = editImg.width * r; canvas.height = editImg.height * r;

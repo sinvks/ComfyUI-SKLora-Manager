@@ -25,12 +25,32 @@ class SK_PointIndexer:
 
     @classmethod
     def IS_CHANGED(s, image, points_data):
+        import hashlib
+        import folder_paths
+        import time
+        import os
+
         m = hashlib.sha256()
-        m.update(image.encode())
+        try:
+            image_path = folder_paths.get_annotated_filepath(image)
+            if os.path.exists(image_path):
+                for _ in range(3):
+                    try:
+                        with open(image_path, 'rb') as f:
+                            m.update(f.read())
+                        break
+                    except PermissionError:
+                        time.sleep(0.1)
+            else:
+                m.update(image.encode())
+        except Exception:
+            m.update(image.encode())
+            
         m.update(points_data.encode())
         return m.hexdigest()
 
     def annotate(self, image, points_data):
+        from PIL import ImageOps
         try:
             pts = json.loads(points_data)
         except:
@@ -39,7 +59,9 @@ class SK_PointIndexer:
             return (torch.zeros((1, 512, 512, 3)), "[]")
         
         img_path = folder_paths.get_annotated_filepath(image)
-        img = Image.open(img_path).convert("RGB")
+        img = Image.open(img_path)
+        img = ImageOps.exif_transpose(img) # 修复旋转
+        img = img.convert("RGB")
         draw = ImageDraw.Draw(img)
         w, h = img.size
         

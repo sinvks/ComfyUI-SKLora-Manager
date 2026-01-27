@@ -1,6 +1,6 @@
 # SK LoRA Manager - ComfyUI 强大 LoRA 管理助手
 
-[![Version](https://img.shields.io/badge/version-1.0.2-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
+[![Version](https://img.shields.io/badge/version-1.0.3-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 SK LoRA Manager 是一款专为 ComfyUI 设计的高级 LoRA 管理插件。它不仅提供美观的预览和分类管理功能，还集成了强大的 LLM（大语言模型）支持，帮助您更高效地管理、搜索和使用您的 LoRA 模型。
@@ -64,7 +64,10 @@ pip install -r requirements.txt
 - `SK LoRA Meta Extractor`: 模型元数据提取工具。
 - `SK Prompt Matrix`: 用于生成测试矩阵的节点。
 
-## � 更新日志
+##  更新日志
+
+### v1.0.3
+- **修复节点卡死**：修复了 `SK Point Indexer` 和 `SK Interactive Editor` 节点在从剪贴板粘贴图片时可能导致的预览不显示及程序卡死问题。
 
 ### v1.0.2
 - **🛡️ 数据防覆盖机制**：实现了全新的数据初始化与智能合并逻辑。用户在更新插件版本时，原有的 LoRA 数据库、配置文件、自定义底模等数据将被完整保留，不再会被初始模板覆盖。

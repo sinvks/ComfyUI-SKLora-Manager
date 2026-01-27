@@ -34,13 +34,16 @@ class SK_InteractiveEditor:
     CATEGORY = "🪄 SK LoRA Manager/Tools"
 
     def process(self, image, points_data, mask_data):
+        from PIL import ImageOps
         if not image:
             empty_img = torch.zeros((1, 512, 512, 3))
             empty_mask = torch.zeros((1, 512, 512))
             return (empty_img, empty_mask, empty_img, empty_img, "[]")
 
         image_path = folder_paths.get_annotated_filepath(image)
-        base_pil = Image.open(image_path).convert("RGB")
+        base_pil = Image.open(image_path)
+        base_pil = ImageOps.exif_transpose(base_pil) # 修复旋转
+        base_pil = base_pil.convert("RGB")
         w, h = base_pil.size
 
         # 1. 准备涂鸦层和 Mask 层
@@ -133,8 +136,26 @@ class SK_InteractiveEditor:
     @classmethod
     def IS_CHANGED(s, image, points_data, mask_data):
         import hashlib
+        import folder_paths
+        import time
+        import os
+
         m = hashlib.sha256()
-        m.update(image.encode())
+        try:
+            image_path = folder_paths.get_annotated_filepath(image)
+            if os.path.exists(image_path):
+                for _ in range(3):
+                    try:
+                        with open(image_path, 'rb') as f:
+                            m.update(f.read())
+                        break
+                    except PermissionError:
+                        time.sleep(0.1)
+            else:
+                m.update(image.encode())
+        except Exception:
+            m.update(image.encode())
+
         m.update(points_data.encode())
         m.update(mask_data.encode())
         return m.hexdigest()
