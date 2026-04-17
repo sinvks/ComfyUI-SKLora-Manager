@@ -566,7 +566,7 @@ export class SKHealthUI {
                             </div>
                             <div class="sk-health-item-path">${item.path}</div>
                             <div class="sk-health-item-meta">
-                                <a href="https://civitai.com/models/${item.civitai_model_id}" target="_blank" style="color:#6366f1;text-decoration:none">
+                                <a href="https://civitai.red/models/${item.civitai_model_id}" target="_blank" style="color:#6366f1;text-decoration:none">
                                     ${Icons.get('link', '', 12)} Civitai
                                 </a>
                                 <span class="sk-health-ignore-btn" data-path="${item.path}" data-version="${item.new_version}">${lang.t('health_ignore_update') || 'Ignore'}</span>

@@ -1195,7 +1195,7 @@ async def process_lora_sync(path, file_hash, helper, settings, dry_run=False, ke
         "tags": final_tags,
         "weight": str(round(final_weight, 2)) if (final_weight and effective_sync_weight) else current_meta.get("weight", ""),
         "sampler": final_sampler if (final_sampler and effective_sync_sampler) else old_sampler,
-        "link": f"https://civitai.com/models/{model_id}" if model_id else current_meta.get("link", ""),
+        "link": f"https://civitai.red/models/{model_id}" if model_id else current_meta.get("link", ""),
         "notes": full_notes if full_notes else current_meta.get("notes", ""),
         "source": "civitai",
         "civitai_model_id": str(model_id) if model_id else current_meta.get("civitai_model_id", ""),
