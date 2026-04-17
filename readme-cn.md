@@ -66,6 +66,10 @@ pip install -r requirements.txt
 
 ##  更新日志
 
+### v1.0.4
+- **修复模型详情链接**：更新了模型详情链接，从 .com 到 .red，以适应 Civitai 最近的域名重构。确保用户可以访问完整的模型详情，避免 404 错误。
+
+
 ### v1.0.3
 - **修复节点卡死**：修复了 `SK Point Indexer` 和 `SK Interactive Editor` 节点在从剪贴板粘贴图片时可能导致的预览不显示及程序卡死问题。
 
