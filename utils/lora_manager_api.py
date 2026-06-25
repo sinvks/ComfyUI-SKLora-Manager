@@ -12,6 +12,7 @@ from PIL import Image
 from aiohttp import web
 from server import PromptServer
 import requests
+from urllib.parse import urlparse, parse_qs
 
 # 导入 cv2 用于视频处理（可选依赖）
 try:
@@ -532,6 +533,100 @@ def _normalize_base_model(model_str, settings_file):
     # 如果仍然没找到匹配，按要求返回空字符串
     return ""
 
+def _extract_civitai_model_id(url):
+    """
+    Extract a Civitai model id from civitai.com or civitai.red model URLs.
+    """
+    if not url:
+        return None, None
+
+    try:
+        parsed = urlparse(url if url.startswith(("http://", "https://")) else f"https://{url}")
+    except Exception:
+        return None, None
+
+    host = (parsed.hostname or "").lower()
+    if host not in {"civitai.com", "www.civitai.com", "civitai.red", "www.civitai.red"}:
+        return None, None
+
+    match = re.search(r"/models/(\d+)", parsed.path or "")
+    if not match:
+        return None, None
+
+    version_id = None
+    query = parse_qs(parsed.query or "")
+    for key in ("modelVersionId", "modelVersion", "versionId"):
+        if query.get(key):
+            version_id = str(query[key][0])
+            break
+
+    return match.group(1), version_id
+
+def _build_civitai_analysis_text(model_info, preferred_version_id=None):
+    """
+    Build LLM-friendly source text from Civitai API model details.
+    """
+    if not isinstance(model_info, dict):
+        return ""
+
+    versions = model_info.get("modelVersions") or []
+    selected_version = None
+    if preferred_version_id:
+        for version in versions:
+            if str(version.get("id", "")) == str(preferred_version_id):
+                selected_version = version
+                break
+    if not selected_version and versions:
+        selected_version = versions[0]
+
+    parts = [
+        f"Source: Civitai API",
+        f"Model Name: {model_info.get('name', '')}",
+        f"Model Type: {model_info.get('type', '')}",
+        f"Model Tags: {', '.join(model_info.get('tags') or [])}",
+        f"Model Description: {model_info.get('description', '')}",
+    ]
+
+    if selected_version:
+        trained_words = selected_version.get("trainedWords") or []
+        images = selected_version.get("images") or []
+        ref_prompts = []
+        image_urls = []
+
+        for image in images[:6]:
+            image_url = image.get("url")
+            if image_url:
+                image_urls.append(image_url)
+            meta = image.get("meta")
+            if isinstance(meta, dict):
+                prompt = meta.get("prompt")
+                if prompt:
+                    ref_prompts.append(str(prompt)[:600])
+
+        parts.extend([
+            f"Version Name: {selected_version.get('name', '')}",
+            f"Base Model: {selected_version.get('baseModel', '')}",
+            f"Version Description: {selected_version.get('description', '')}",
+            f"Trained Words: {', '.join(trained_words)}",
+            f"Preview Image URLs: {', '.join(image_urls[:3])}",
+            f"Reference Prompts: {json.dumps(ref_prompts[:3], ensure_ascii=False)}",
+        ])
+
+        meta_rows = []
+        for image in images[:6]:
+            meta = image.get("meta")
+            if isinstance(meta, dict):
+                meta_rows.append({
+                    "sampler": meta.get("sampler") or meta.get("Sampler"),
+                    "scheduler": meta.get("scheduler") or meta.get("Scheduler"),
+                    "cfgScale": meta.get("cfgScale") or meta.get("CFG scale"),
+                    "steps": meta.get("steps") or meta.get("Steps"),
+                })
+        if meta_rows:
+            parts.append(f"Generation Metadata Samples: {json.dumps(meta_rows, ensure_ascii=False)}")
+
+    return "\n\n".join(str(part) for part in parts if part)
+
 @routes.post("/lora_manager/fetch_from_url")
 async def fetch_from_url(request):
     """
@@ -558,42 +653,49 @@ async def fetch_from_url(request):
         elif locale == "zh-TW":
             lang_name = "Traditional Chinese"
 
-        # 1. 获取 HTML 内容
-        print(f"[SK-LoRA] [LLM] 正在从 URL 获取数据: {url}")
-        try:
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
-            resp = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.get(url, headers=headers, timeout=30))
-            resp.raise_for_status()
-            html_content = resp.text
-        except Exception as e:
-            print(f"[SK-LoRA] [LLM] URL 获取失败: {e}")
-            return web.json_response({"status": "error", "message": f"Failed to fetch URL: {str(e)}"}, status=500)
+        settings = get_local_settings()
+        model_id, model_version_id = _extract_civitai_model_id(url)
 
-        # 2. 提取文本内容 (脱敏处理)
+        # 1. Fetch source content. Civitai/red model pages use the REST API to avoid webpage 403.
         text_content = ""
-        if BeautifulSoup:
+        if model_id:
+            print(f"[SK-LoRA] [LLM] Fetching Civitai model via API: {model_id}")
+            helper = CivitaiHelper(api_key=settings.get("civitai_key"), proxy=settings.get("proxy"))
+            model_info = await asyncio.get_event_loop().run_in_executor(None, helper.get_model_details, model_id)
+            if not model_info:
+                return web.json_response({"status": "error", "message": f"Failed to fetch Civitai model via API: {model_id}"}, status=500)
+            text_content = _build_civitai_analysis_text(model_info, model_version_id)
+        else:
+            print(f"[SK-LoRA] [LLM] 正在从 URL 获取数据: {url}")
             try:
-                soup = BeautifulSoup(html_content, 'html.parser')
-                # 移除不需要的标签
-                for tag in soup(["script", "style", "svg", "noscript", "iframe", "header", "footer", "nav", "aside"]):
-                    tag.decompose()
-                text_content = soup.get_text(separator=' ', strip=True)
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+                resp = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.get(url, headers=headers, timeout=30))
+                resp.raise_for_status()
+                html_content = resp.text
             except Exception as e:
-                print(f"[SK-LoRA] [LLM] 网页解析失败: {e}")
-                text_content = ""
-        
-        if not text_content:
-            # 备用正则提取
-            text_content = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', html_content, flags=re.IGNORECASE)
-            text_content = re.sub(r'<style\b[^>]*>[\s\S]*?</style>', '', text_content, flags=re.IGNORECASE)
-            text_content = re.sub(r'<[^>]+>', ' ', text_content)
-            text_content = re.sub(r'\s+', ' ', text_content).strip()
-            
+                print(f"[SK-LoRA] [LLM] URL 获取失败: {e}")
+                return web.json_response({"status": "error", "message": f"Failed to fetch URL: {str(e)}"}, status=500)
+
+            if BeautifulSoup:
+                try:
+                    soup = BeautifulSoup(html_content, 'html.parser')
+                    for tag in soup(["script", "style", "svg", "noscript", "iframe", "header", "footer", "nav", "aside"]):
+                        tag.decompose()
+                    text_content = soup.get_text(separator=' ', strip=True)
+                except Exception as e:
+                    print(f"[SK-LoRA] [LLM] 网页解析失败: {e}")
+                    text_content = ""
+
+            if not text_content:
+                text_content = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', html_content, flags=re.IGNORECASE)
+                text_content = re.sub(r'<style\b[^>]*>[\s\S]*?</style>', '', text_content, flags=re.IGNORECASE)
+                text_content = re.sub(r'<[^>]+>', ' ', text_content)
+                text_content = re.sub(r'\s+', ' ', text_content).strip()
+
         # 截断超长内容
         text_content = text_content[:50000]
 
         # 3. LLM 分析
-        settings = get_local_settings()
         active_llm_id = settings.get("active_llm_id")
         llm_activate = settings.get("llm_activate")
         if isinstance(llm_activate, str):
@@ -1254,15 +1356,17 @@ async def process_lora_sync(path, file_hash, helper, settings, dry_run=False, ke
                             "Constraint: Respond with valid JSON only: {\"weight\": float, \"sampler\": str, \"notes\": str}"
                         )
                         
+                        compact_model_desc = str(model_desc or "")[:6000]
+                        compact_ver_desc = str(ver_desc or "")[:4000]
                         user_prompt = f"""
                         Model Name: {model_info.get('name', 'Unknown')}
-                        Description: {model_desc}
-                        Version Info: {ver_desc}
+                        Description: {compact_model_desc}
+                        Version Info: {compact_ver_desc}
                         Reference Prompts: {json.dumps(ref_prompts, ensure_ascii=False)}
                         """
                         
-                        # 2. 调用 LLM (超时保护 15s)
-                        response_text = await asyncio.wait_for(provider.chat(user_prompt, system_prompt, keep_alive=keep_alive), timeout=15.0)
+                        # 2. 调用 LLM (超时保护 120s)
+                        response_text = await asyncio.wait_for(provider.chat(user_prompt, system_prompt, keep_alive=keep_alive), timeout=120.0)
                         
                         # 3. 解析 JSON
                         json_str = response_text.strip()
@@ -1303,7 +1407,7 @@ async def process_lora_sync(path, file_hash, helper, settings, dry_run=False, ke
                 llm_info.update({"status": "failed", "message": "未配置活跃 LLM"})
                     
         except asyncio.TimeoutError:
-            llm_info.update({"status": "failed", "message": "请求超时 (15s)"})
+            llm_info.update({"status": "failed", "message": "请求超时 (120s)"})
             print(f"[SK-LoRA] [LLM] 分析超时: {path}")
         except Exception as e:
             llm_info.update({"status": "failed", "message": str(e)})
@@ -1811,6 +1915,25 @@ async def api_save_local_settings(request):
             return web.json_response({"status": "error", "message": "保存失败"}, status=500)
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+@routes.post("/lora_manager/test_civitai_key")
+async def api_test_civitai_key(request):
+    """
+    API endpoint: test a Civitai API key without saving or logging the key.
+    """
+    try:
+        data = await request.json()
+        key = (data.get("civitai_key") or "").strip()
+        proxy = (data.get("proxy") or "").strip()
+        if not key:
+            return web.json_response({"status": "error", "code": "missing_key"})
+
+        helper = CivitaiHelper(api_key=key, proxy=proxy)
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, helper.test_api_key)
+        return web.json_response(result)
+    except Exception:
+        return web.json_response({"status": "error", "code": "network_error"}, status=500)
 
 @routes.get("/lora_manager/get_basemodel_settings")
 async def api_get_basemodel_settings(request):

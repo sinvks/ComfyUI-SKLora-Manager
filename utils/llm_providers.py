@@ -128,6 +128,12 @@ class OllamaDrive(BaseDrive):
         if not self.base_url:
             self.base_url = "http://localhost:11434"
 
+    def get_headers(self) -> Dict[str, str]:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
+
     async def chat(self, prompt: str, system_prompt: str = "", keep_alive: Union[int, str, None] = None) -> str:
         await self._wait_for_rate_limit()
         url = f"{self.base_url}/api/chat"
@@ -145,7 +151,7 @@ class OllamaDrive(BaseDrive):
             # print(f"[SK-LoRA] [LLM] Ollama chat with keep_alive: {keep_alive}")
         
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=payload) as resp:
+            async with session.post(url, headers=self.get_headers(), json=payload) as resp:
                 if resp.status == 200:
                     data = await resp.json()
                     return data.get("message", {}).get("content", "")
@@ -169,7 +175,7 @@ class OllamaDrive(BaseDrive):
         
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, timeout=5) as resp:
+                async with session.post(url, headers=self.get_headers(), json=payload, timeout=5) as resp:
                     if resp.status == 200:
                         # print(f"[SK-LoRA] [LLM] Ollama 模型 '{self.selected_model}' 卸载成功")
                         pass
@@ -184,7 +190,7 @@ class OllamaDrive(BaseDrive):
         url = f"{self.base_url}/api/tags"
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=5) as resp:
+                async with session.get(url, headers=self.get_headers(), timeout=5) as resp:
                     if resp.status == 200:
                         text = await resp.text()
                         try:
@@ -317,6 +323,13 @@ LLM_TEMPLATES = {
         "min_interval": 0.5,
         "models": [] # 动态获取
     },
+    "llamacpp": {
+        "base_url": "http://127.0.0.1:8080/v1",
+        "min_interval": 0.5,
+        "models": [
+            {"name": "local-model", "recommended": True}
+        ]
+    },
     "zhipu": {
         "base_url": "https://open.bigmodel.cn/api/paas/v4/",
         "min_interval": 4.0,
@@ -349,6 +362,14 @@ LLM_TEMPLATES = {
             {"name": "meta/llama-3.1-8b-instruct", "recommended": False},
             {"name": "mistralai/mixtral-8x7b-instruct-v0.1", "recommended": False}
         ]
+    },
+    "mimo": {
+        "base_url": "",
+        "min_interval": 2.0,
+        "models": [
+            {"name": "mimo-v2.5-pro", "recommended": True},
+            {"name": "mimo-v2.5", "recommended": True}
+        ]
     }
 }
 
@@ -366,7 +387,7 @@ class LLMProviderManager:
             return GeminiDrive(config)
         elif p_type == "ollama":
             return OllamaDrive(config)
-        elif p_type in ["openai", "deepseek", "groq", "zhipu", "xflow", "custom", "nvidia"]:
+        elif p_type in ["openai", "deepseek", "groq", "zhipu", "xflow", "custom", "nvidia", "mimo", "llamacpp"]:
             return OpenAIDrive(config)
         return None
 

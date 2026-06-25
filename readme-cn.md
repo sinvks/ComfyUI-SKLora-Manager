@@ -1,6 +1,6 @@
 # SK LoRA Manager - ComfyUI 强大 LoRA 管理助手
 
-[![Version](https://img.shields.io/badge/version-1.0.4-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
+[![Version](https://img.shields.io/badge/version-1.1.2-blue)](https://github.com/sinvks/ComfyUI-SKLora-Manager)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 SK LoRA Manager 是一款专为 ComfyUI 设计的高级 LoRA 管理插件。它不仅提供美观的预览和分类管理功能，还集成了强大的 LLM（大语言模型）支持，帮助您更高效地管理、搜索和使用您的 LoRA 模型。
@@ -65,6 +65,11 @@ pip install -r requirements.txt
 - `SK Prompt Matrix`: 用于生成测试矩阵的节点。
 
 ##  更新日志
+
+### v1.1.2
+- **LLM 服务商更新**：新增 MiMo 和 llama.cpp 支持，并优化 Ollama/llama.cpp 的 API Key 配置。
+- **Civitai 兼容修复**：更新 Civitai API Key 检测和 AI 分析流程，避免 red 域名页面抓取 403。
+- **界面体验优化**：优化 LLM 服务商选择、Civitai API Key 测试和同步/分析弹窗的加载反馈。
 
 ### v1.0.4
 - **修复模型详情链接**：更新了模型详情链接，从 .com 到 .red，以适应 Civitai 最近的域名重构。确保用户可以访问完整的模型详情，避免 404 错误。

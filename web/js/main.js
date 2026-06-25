@@ -41,6 +41,7 @@ app.registerExtension({
             const settingVersionId = getSettingId('tab_version_info', 'Version');
             
             const settingCivitaiKeyId = getSettingId('tab_basic_config', 'CivitaiKey');
+            const settingCivitaiKeyTestId = getSettingId('tab_basic_config', 'CivitaiKeyTest');
 
             // 注入 CSS 隐藏版本号输入框，并修复自定义 SVG 图标显示
             const style = document.createElement("style");
@@ -93,6 +94,43 @@ app.registerExtension({
 
                 /* 覆盖 ComfyUI 默认按钮样式可能带来的干扰 */
                 .sk-manager-btn::after, .sk-manager-btn::before { display: none !important; }
+                .sk-civitai-test-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    width: 100%;
+                }
+                .sk-civitai-settings-test-btn {
+                    height: 32px !important;
+                    padding: 0 14px !important;
+                    border-radius: 6px !important;
+                    border: 1px solid #334155 !important;
+                    background: #1e293b !important;
+                    color: #94a3b8 !important;
+                    font-size: 13px !important;
+                    cursor: pointer !important;
+                    flex-shrink: 0;
+                }
+                .sk-civitai-settings-test-btn:hover {
+                    background: #334155 !important;
+                    color: #fff !important;
+                }
+                .sk-civitai-settings-test-btn:disabled {
+                    opacity: 0.55 !important;
+                    cursor: not-allowed !important;
+                }
+                .sk-civitai-test-result {
+                    min-width: 0;
+                    flex: 1;
+                    color: #94a3b8;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .sk-civitai-test-result.success { color: #4ade80; }
+                .sk-civitai-test-result.error { color: #f87171; }
             `;
             document.head.appendChild(style);
 
@@ -115,6 +153,63 @@ app.registerExtension({
             const settingBaseModelMgrId = getSettingId('tab_basemodel_mgr', 'BaseModelMgr');
             
             const settingAdvancedSettingsId = getSettingId('tab_advanced_settings', 'AdvancedSettings');
+
+            const testCivitaiKey = async (key, proxy, btn, resultEl = null) => {
+                const setResult = (messageKey, type = "") => {
+                    if (!resultEl) return;
+                    resultEl.textContent = lang.t(messageKey);
+                    resultEl.className = `sk-civitai-test-result ${type}`.trim();
+                };
+
+                if (!key) {
+                    ToastManager.error(lang.t('civitai_key_test_missing'));
+                    setResult('civitai_key_test_missing', 'error');
+                    return;
+                }
+
+                const originalText = btn?.textContent || lang.t('civitai_key_test');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = lang.t('civitai_key_testing');
+                }
+                setResult('civitai_key_testing');
+
+                try {
+                    const resp = await api.fetchApi("/lora_manager/test_civitai_key", {
+                        method: "POST",
+                        body: JSON.stringify({ civitai_key: key, proxy })
+                    });
+                    const result = await resp.json();
+
+                    if (result.status === "success") {
+                        ToastManager.success(lang.t('civitai_key_test_success'));
+                        setResult('civitai_key_test_success', 'success');
+                        return;
+                    }
+
+                    const messageMap = {
+                        missing_key: 'civitai_key_test_missing',
+                        invalid_key: 'civitai_key_test_invalid',
+                        forbidden: 'civitai_key_test_forbidden',
+                        network_error: 'civitai_key_test_network',
+                        http_error: 'civitai_key_test_http'
+                    };
+                    const messageKey = messageMap[result.code] || 'civitai_key_test_failed';
+                    ToastManager.error(lang.t(messageKey, [result.http_status || ""]));
+                    if (resultEl) {
+                        resultEl.textContent = lang.t(messageKey, [result.http_status || ""]);
+                        resultEl.className = "sk-civitai-test-result error";
+                    }
+                } catch (e) {
+                    ToastManager.error(lang.t('civitai_key_test_network'));
+                    setResult('civitai_key_test_network', 'error');
+                } finally {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                }
+            };
 
             // 1. 创建按钮组 (提前创建以防 onChange 报错)
             this.btnGroup = document.createElement("div");
@@ -213,6 +308,38 @@ app.registerExtension({
                         loraManager.localSettings.civitai_key = v;
                         await loraManager.saveLocalSettings();
                     }
+                }
+            });
+
+            app.ui.settings.addSetting({
+                id: settingCivitaiKeyTestId,
+                name: lang.t('civitai_key_test_label'),
+                type: () => {
+                    const row = document.createElement("div");
+                    row.className = "sk-civitai-test-row";
+
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "sk-civitai-settings-test-btn";
+                    btn.textContent = lang.t('civitai_key_test');
+
+                    const result = document.createElement("span");
+                    result.className = "sk-civitai-test-result";
+                    result.textContent = lang.t('civitai_key_test_idle');
+
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const keyInput = document.getElementById(settingCivitaiKeyId);
+                        const proxyInput = document.getElementById(settingProxyId);
+                        const key = keyInput?.value?.trim() || loraManager.localSettings.civitai_key || "";
+                        const proxy = proxyInput?.value?.trim() || loraManager.localSettings.proxy || "";
+                        testCivitaiKey(key, proxy, btn, result);
+                    };
+
+                    row.appendChild(btn);
+                    row.appendChild(result);
+                    return row;
                 }
             });
 

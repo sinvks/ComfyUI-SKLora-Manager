@@ -173,6 +173,12 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# SK LoRA Manager runtime data
+data/lora_manager_settings.json
+data/lora_trigger_words.json
+data/basemodel_settings.json
+data/cache/
+
 # Cursor  
 #  Cursor is an AI-powered code editor.`.cursorignore` specifies files/directories to 
 #  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data

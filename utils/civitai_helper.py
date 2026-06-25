@@ -22,6 +22,24 @@ class CivitaiHelper:
             return {"http": self.proxy, "https": self.proxy}
         return None
 
+    def test_api_key(self):
+        """Test whether the configured Civitai API key can access the API."""
+        if not self.api_key:
+            return {"status": "error", "code": "missing_key"}
+
+        url = f"{self.base_url}/me"
+        try:
+            response = requests.get(url, headers=self.get_headers(), proxies=self.get_proxies(), timeout=15)
+            if response.status_code == 200:
+                return {"status": "success", "code": "ok"}
+            if response.status_code == 401:
+                return {"status": "error", "code": "invalid_key"}
+            if response.status_code == 403:
+                return {"status": "error", "code": "forbidden"}
+            return {"status": "error", "code": "http_error", "http_status": response.status_code}
+        except Exception:
+            return {"status": "error", "code": "network_error"}
+
     # 修改时间：2025-12-30 20:15:45 - 优化：提取 HTML 清理逻辑，用于处理模型介绍
     def clean_html(self, raw_html):
         if not raw_html: return ""
@@ -30,9 +48,9 @@ class CivitaiHelper:
         return cleantext.strip()
 
     def get_version_by_hash(self, file_hash):
-        # 深度权限穿透：强制增加 nsfw=true 和 browsingLevel=31 (位掩码全开 1+2+4+8+16)
-        # 解决 API 返回屏蔽码 16 的问题
-        url = f"{self.base_url}/model-versions/by-hash/{file_hash}?nsfw=true&browsingLevel=31"
+        # Civitai no longer accepts the old nsfw/browsingLevel query parameters here.
+        # Authorization and account browsing settings are handled by Civitai.
+        url = f"{self.base_url}/model-versions/by-hash/{file_hash}"
         print(f"[SK-LoRA] [System] 正在获取模型信息 (Hash: {file_hash[:8]})...")
         try:
             response = requests.get(url, headers=self.get_headers(), proxies=self.get_proxies(), timeout=15)
@@ -59,8 +77,8 @@ class CivitaiHelper:
 
     def get_model_details(self, model_id):
         """获取模型的详细信息，包括所有版本列表"""
-        # 深度权限穿透：强制增加 nsfw=true 和 browsingLevel=31
-        url = f"{self.base_url}/models/{model_id}?nsfw=true&browsingLevel=31"
+        # Civitai no longer accepts the old nsfw/browsingLevel query parameters here.
+        url = f"{self.base_url}/models/{model_id}"
         try:
             response = requests.get(url, headers=self.get_headers(), proxies=self.get_proxies(), timeout=15)
             if response.status_code == 200:

@@ -711,6 +711,55 @@ export class LoraManagerDialog {
         } catch (e) { ToastManager.error(lang.t('save_error')); return false; }
     }
 
+    async testCivitaiKey(modal) {
+        const keyInput = modal.querySelector('#sk-civitai-key');
+        const proxyInput = modal.querySelector('#sk-proxy');
+        const testBtn = modal.querySelector('#sk-test-civitai-key');
+        const key = keyInput?.value?.trim() || "";
+        const proxy = proxyInput?.value?.trim() || "";
+
+        if (!key) {
+            ToastManager.error(lang.t('civitai_key_test_missing'));
+            return;
+        }
+
+        const originalText = testBtn?.textContent || lang.t('civitai_key_test');
+        if (testBtn) {
+            testBtn.disabled = true;
+            testBtn.textContent = lang.t('civitai_key_testing');
+        }
+
+        try {
+            const resp = await api.fetchApi("/lora_manager/test_civitai_key", {
+                method: "POST",
+                body: JSON.stringify({ civitai_key: key, proxy })
+            });
+            const result = await resp.json();
+
+            if (result.status === "success") {
+                ToastManager.success(lang.t('civitai_key_test_success'));
+                return;
+            }
+
+            const messageMap = {
+                missing_key: 'civitai_key_test_missing',
+                invalid_key: 'civitai_key_test_invalid',
+                forbidden: 'civitai_key_test_forbidden',
+                network_error: 'civitai_key_test_network',
+                http_error: 'civitai_key_test_http'
+            };
+            const messageKey = messageMap[result.code] || 'civitai_key_test_failed';
+            ToastManager.error(lang.t(messageKey, [result.http_status || ""]));
+        } catch (e) {
+            ToastManager.error(lang.t('civitai_key_test_network'));
+        } finally {
+            if (testBtn) {
+                testBtn.disabled = false;
+                testBtn.textContent = originalText;
+            }
+        }
+    }
+
     // 日期格式化辅助方法
     _formatDate(val) {
         if (!val) return "0000.00.00";
@@ -2423,7 +2472,7 @@ applyBtn.onclick = (e) => {
             // 加载状态
             if (!civitaiData) {
                 const localHtml = `<div class="diff-cell local readonly">${this.formatValue(field, localVal)}</div>`;
-                const loadingHtml = `<div class="diff-cell civitai"><div class="sync-mini-spinner" style="border-color: #64748b; border-top-color: #fff;"></div></div>`;
+                const loadingHtml = `<div class="diff-cell civitai"><div class="diff-loading-wrap"><span class="diff-loading-icon" aria-hidden="true">|</span><span class="diff-loading-label">${lang.t('loading')}</span><div class="diff-loading-bar"><span class="diff-loading-bar-fill"></span></div></div></div>`;
                 return `
                     <div class="diff-row" data-key="${field.key}">
                         <div class="diff-cell label">${field.label}</div>
@@ -2677,6 +2726,35 @@ applyBtn.onclick = (e) => {
 
         const rowsHtml = fields.map(f => buildRow(f)).join('');
 
+        const startDiffLoadingAnimations = () => {
+            if (modal._diffLoadingTimer) {
+                return;
+            }
+
+            const frames = ['|', '/', '-', '\\'];
+            let frame = 0;
+
+            modal._diffLoadingTimer = setInterval(() => {
+                if (!document.body.contains(modal)) {
+                    clearInterval(modal._diffLoadingTimer);
+                    modal._diffLoadingTimer = null;
+                    return;
+                }
+
+                const frameText = frames[frame % frames.length];
+                const barOffset = ((frame * 12) % 180) - 40;
+
+                modal.querySelectorAll('.diff-loading-icon').forEach(icon => {
+                    icon.textContent = frameText;
+                });
+                modal.querySelectorAll('.diff-loading-bar-fill').forEach(fill => {
+                    fill.style.transform = `translateX(${barOffset}%)`;
+                });
+
+                frame += 1;
+            }, 120);
+        };
+
         // 构建 LLM 提示文字
         let llmNote = "";
         if (civitaiData && llmInfo) {
@@ -2703,6 +2781,11 @@ applyBtn.onclick = (e) => {
                 .diff-cell.label .sk-svg-icon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; }
                 .diff-cell.local { color: #94a3b8; background: rgba(0,0,0,0.2); }
                 .diff-cell.civitai { background: rgba(0,0,0,0.1); flex-direction: column; align-items: flex-start; gap: 5px; }
+                .diff-loading-wrap { display: flex; align-items: center; gap: 8px; min-height: 28px; width: 100%; color: #94a3b8; font-size: 12px; }
+                .diff-loading-icon { width: 16px; color: #f8fafc; font-family: Consolas, Monaco, monospace; font-size: 16px; line-height: 1; text-align: center; flex-shrink: 0; }
+                .diff-loading-label { white-space: nowrap; }
+                .diff-loading-bar { position: relative; flex: 1; max-width: 96px; height: 4px; overflow: hidden; border-radius: 999px; background: rgba(148, 163, 184, 0.18); }
+                .diff-loading-bar-fill { position: absolute; left: 0; top: 0; width: 35%; height: 100%; border-radius: inherit; background: #60a5fa; transform: translateX(-100%); transition: transform 0.12s linear; }
                 .diff-input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 5px; border-radius: 4px; }
                 .diff-input.readonly { background: #1e293b; color: #94a3b8; border-color: #334155; cursor: default; }
                 .diff-thumb { max-width: 100px; max-height: 100px; object-fit: cover; border-radius: 4px; }
@@ -2760,6 +2843,7 @@ applyBtn.onclick = (e) => {
         `;
 
         document.body.appendChild(modal);
+        startDiffLoadingAnimations();
 
         // 如果是 loading 状态，执行 fetch
         if (!civitaiData && retryFetchFn) {
@@ -2776,6 +2860,9 @@ applyBtn.onclick = (e) => {
                         </div>
                         ${fields.map(f => buildRow(f)).join('')}
                     `;
+
+                    startDiffLoadingAnimations();
+                    await new Promise(resolve => requestAnimationFrame(resolve));
                     
                     const data = await retryFetchFn();
                     if (data.status === 'success') {
@@ -2984,7 +3071,7 @@ applyBtn.onclick = (e) => {
             // 1. 即时弹出面板，传入 null 作为 civitaiData 表示 loading 状态
             // 并传入 fetch 函数用于重试逻辑
             const fetchFn = async () => {
-                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 20000));
+                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 120000)); // 2 mins timeout for LLM-enhanced Civitai sync
                 const fetchPromise = api.fetchApi("/lora_manager/fetch_civitai_diff", {
                     method: "POST",
                     body: JSON.stringify({ path, hash, locale: lang.locale })
@@ -3495,17 +3582,17 @@ applyBtn.onclick = (e) => {
             .sk-modal-container .sk-llm-btn.delete:hover { background: #ef4444; color: white; border-color: #ef4444; }
             .sk-modal-container .sk-llm-btn.default:hover { color: #fbbf24; }
             .sk-modal-container .sk-llm-modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
-            .sk-modal-container .sk-llm-provider-select { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+            .sk-modal-container .sk-llm-provider-select { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
             .sk-modal-container .sk-llm-provider-select.is-locked .sk-provider-option { cursor: default; }
-            .sk-modal-container .sk-provider-option { position: relative; flex: 1; min-width: 80px; padding: 12px 8px; background: #090909; border: 1px solid #334155; border-radius: 8px; text-align: center; cursor: pointer; transition: 0.2s; }
+            .sk-modal-container .sk-provider-option { position: relative; min-width: 0; min-height: 38px; padding: 6px 8px; background: #090909; border: 1px solid #334155; border-radius: 6px; text-align: left; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
             .sk-modal-container .sk-provider-option:hover { background: #111111; border-color: #475569; }
             .sk-modal-container .sk-provider-option.selected { border-color: var(--sk-accent-color); background: rgba(58, 142, 230, 0.1); }
             .sk-modal-container .sk-provider-option.is-disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.8); }
             .sk-modal-container .sk-provider-option.is-disabled:hover { background: #090909; border-color: #334155; }
-            .sk-modal-container .sk-provider-icon { position: relative; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; height: 32px; }
+            .sk-modal-container .sk-provider-icon { position: relative; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0; }
             .sk-modal-container .sk-provider-lock-badge { position: absolute; top: 4px; left: 4px; background: #ef4444; color: #fff; border-radius: 4px; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 5; }
-            .sk-modal-container .sk-provider-icon svg { width: 24px; height: 24px; }
-            .sk-modal-container .sk-provider-name { font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .sk-modal-container .sk-provider-icon svg { width: 18px; height: 18px; }
+            .sk-modal-container .sk-provider-name { font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: 1.2; }
             .sk-modal-container .sk-provider-option.selected .sk-provider-name { color: #fff; font-weight: bold; }
             .sk-modal-container .sk-llm-form-group { margin-bottom: 15px; }
             .sk-modal-container .sk-llm-form-label { display: block; color: #aaa; font-size: 12px; margin-bottom: 6px; font-weight: 500; }
@@ -3545,14 +3632,12 @@ applyBtn.onclick = (e) => {
             .sk-llm-center-form { flex: 1; overflow-y: auto; min-height: 0; }
             .sk-modal-container.sk-llm-center .sk-llm-modal-body { max-height: none; overflow-y: visible; padding: 18px 20px; }
 
-            .sk-modal-container.sk-llm-center .sk-llm-provider-select { flex-wrap: nowrap; gap: 8px; margin-bottom: 16px; }
-            .sk-modal-container.sk-llm-center .sk-provider-option { min-width: 0; padding: 10px 6px; }
-            .sk-modal-container.sk-llm-center .sk-provider-icon { font-size: 22px; margin-bottom: 5px; }
+            .sk-modal-container.sk-llm-center .sk-llm-provider-select { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+            .sk-modal-container.sk-llm-center .sk-provider-option { min-width: 0; padding: 6px 8px; }
 
-            .sk-modal-container.sk-modal-sm .sk-llm-provider-select { gap: 8px; margin-bottom: 16px; }
-            .sk-modal-container.sk-modal-sm .sk-provider-option { flex: 1 1 calc(25% - 8px); min-width: 0; padding: 10px 6px; }
-            .sk-modal-container.sk-modal-sm .sk-provider-icon { font-size: 22px; margin-bottom: 5px; }
-            .sk-modal-container.sk-modal-sm .sk-provider-name { font-size: 10px; }
+            .sk-modal-container.sk-modal-sm .sk-llm-provider-select { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+            .sk-modal-container.sk-modal-sm .sk-provider-option { min-width: 0; padding: 6px 8px; }
+            .sk-modal-container.sk-modal-sm .sk-provider-name { font-size: 11px; }
             .sk-modal-container .sk-llm-card.active { border-color: var(--sk-accent-color); background: rgba(58, 142, 230, 0.1); }
             .sk-modal-container .sk-llm-card.is-default { box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.25); }
             /* Snapshot Modal Styles */
@@ -3590,6 +3675,9 @@ applyBtn.onclick = (e) => {
             .sk-modal-container .sk-input-group input { padding-right: 30px; }
             .sk-modal-container .sk-input-eye { position: absolute; right: 8px; cursor: pointer; color: #666; font-size: 14px; user-select: none; z-index: 10; }
             .sk-modal-container .sk-input-eye:hover { color: #ccc; }
+            .sk-modal-container .sk-civitai-key-group input { padding-right: 92px !important; }
+            .sk-modal-container .sk-civitai-key-group .sk-input-eye { right: 9px; }
+            .sk-modal-container .sk-civitai-test-btn { position: absolute; right: 34px; top: 50%; transform: translateY(-50%); height: 24px; padding: 0 9px; font-size: 11px; line-height: 22px; z-index: 11; border-radius: 5px; }
             .sk-modal-container .sk-form-group label, .sk-modal-container .sk-form-row label, .sk-modal-container .sk-settings-row label { white-space: nowrap; }
             .sk-modal-container .sk-snapshot-remark-icon { margin-left: 8px; font-size: 12px; opacity: 0.8; cursor: help; }
             
@@ -3600,6 +3688,8 @@ applyBtn.onclick = (e) => {
             .sk-modal-container .sk-settings-row .sk-input:not(.sk-input-sm),
             .sk-modal-container .sk-settings-row .sk-select,
             .sk-modal-container .sk-settings-row .sk-input-group { width: 500px !important; flex-shrink: 0; }
+            .sk-modal-container .sk-form-row .sk-civitai-key-group,
+            .sk-modal-container .sk-settings-row .sk-civitai-key-group { width: 500px !important; flex-shrink: 0; }
 
             /* Backup Info Beautification */
             .sk-last-backup-container { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(58, 142, 230, 0.05); border: 1px solid rgba(58, 142, 230, 0.15); border-radius: 8px; margin: 2px 0 12px 0; color: #e2e8f0; font-size: 12px; transition: all 0.3s ease; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); }
@@ -3738,8 +3828,9 @@ applyBtn.onclick = (e) => {
                                     <div class="sk-card-header">${lang.t('section_basic_info')}</div>
                                     <div class="sk-form-row">
                                         <label>${lang.t('civitai_key')}</label>
-                                        <div class="sk-input-group">
+                                        <div class="sk-input-group sk-civitai-key-group">
                                             <input type="password" id="sk-civitai-key" value="${this.localSettings.civitai_key || ''}" class="sk-input">
+                                            <button class="sk-btn sk-btn-secondary sk-civitai-test-btn" id="sk-test-civitai-key" type="button">${lang.t('civitai_key_test')}</button>
                                             <span class="sk-input-eye" id="sk-civitai-key-eye">${Icons.get('eye', '', 14)}</span>
                                         </div>
                                     </div>
@@ -4132,6 +4223,11 @@ applyBtn.onclick = (e) => {
             setupDragDrop('#sk-cloud-custom');
 
             // 保存
+            const testCivitaiBtn = modal.querySelector('#sk-test-civitai-key');
+            if (testCivitaiBtn) {
+                testCivitaiBtn.onclick = () => this.testCivitaiKey(modal);
+            }
+
             modal.querySelector('#sk-btn-save').onclick = async () => {
                 if (this.isSavingSettings) return;
                 
@@ -4424,7 +4520,7 @@ applyBtn.onclick = (e) => {
                             label.firstChild.textContent = lang.t(key); 
                             if (tip && key === 'llm_min_interval') {
                                 // 重新渲染 tip
-                                if (existingModal.querySelector('[data-provider="ollama"].selected')) {
+                                if (existingModal.querySelector('[data-provider="ollama"].selected, [data-provider="llamacpp"].selected')) {
                                      label.innerHTML = `${lang.t(key)} <span class="sk-llm-tip">(${lang.t('llm_ollama_interval_tip')})</span>`;
                                 }
                             }
@@ -4740,7 +4836,10 @@ applyBtn.onclick = (e) => {
                                 <div class="sk-settings-col">
                                     <div class="sk-settings-row">
                                         <label>${lang.t('civitai_key')}</label>
-                                        <input type="password" id="sk-civitai-key" value="${this.localSettings.civitai_key || ''}" placeholder="${lang.t('civitai_key_placeholder')}">
+                                        <div class="sk-input-group sk-civitai-key-group">
+                                            <input type="password" id="sk-civitai-key" value="${this.localSettings.civitai_key || ''}" placeholder="${lang.t('civitai_key_placeholder')}">
+                                            <button class="sk-btn sk-btn-secondary sk-civitai-test-btn" id="sk-test-civitai-key" type="button">${lang.t('civitai_key_test')}</button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="sk-settings-col">
@@ -5416,6 +5515,11 @@ applyBtn.onclick = (e) => {
             };
 
             // 保存设置
+            const testCivitaiBtnDeprecated = modal.querySelector('#sk-test-civitai-key');
+            if (testCivitaiBtnDeprecated) {
+                testCivitaiBtnDeprecated.onclick = () => this.testCivitaiKey(modal);
+            }
+
             modal.querySelector('#sk-btn-save').onclick = async () => {
                 this.localSettings.civitai_key = modal.querySelector('#sk-civitai-key').value.trim();
                 this.localSettings.proxy = modal.querySelector('#sk-proxy').value.trim();
@@ -5730,7 +5834,7 @@ applyBtn.onclick = (e) => {
             
             let isValid = true;
             // 虽然 state.alias 在逻辑上是必填，但我们可以智能生成，所以这里只检查其他核心项
-            if (state.provider !== 'ollama' && state.provider !== 'custom' && !state.api_key) isValid = false;
+            if (!['ollama', 'llamacpp', 'custom'].includes(state.provider) && !state.api_key) isValid = false;
             if (!state.base_url) isValid = false;
             if (!state.selected_model) isValid = false;
             
@@ -5757,7 +5861,7 @@ applyBtn.onclick = (e) => {
             const formEl = modal.querySelector('#sk-llm-form');
             if (!formEl) return;
 
-            const providers = ['gemini', 'openai', 'deepseek', 'groq', 'ollama', 'zhipu', 'xflow', 'nvidia', 'custom'];
+            const providers = ['gemini', 'openai', 'deepseek', 'groq', 'ollama', 'llamacpp', 'mimo', 'zhipu', 'xflow', 'nvidia', 'custom'];
             const currentTemplate = templates[state.provider] || {};
 
             if (!state.base_url && currentTemplate.base_url) {
@@ -5812,7 +5916,6 @@ applyBtn.onclick = (e) => {
                         <input type="text" class="sk-llm-input" id="llm-alias" value="${state.alias}" placeholder="${lang.t('llm_alias_placeholder')}">
                     </div>
 
-                    ${state.provider !== 'ollama' ? `
                     <div class="sk-llm-form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                             <label class="sk-llm-form-label" style="margin-bottom: 0;">${lang.t('llm_api_key')}</label>
@@ -5823,7 +5926,6 @@ applyBtn.onclick = (e) => {
                             <span class="sk-pwd-toggle">${Icons.get('eye', '', 14)}</span>
                         </div>
                     </div>
-                    ` : ''}
 
                     <div class="sk-llm-form-group">
                         <label class="sk-llm-form-label">
@@ -5870,7 +5972,7 @@ applyBtn.onclick = (e) => {
                     <div class="sk-llm-form-group">
                         <label class="sk-llm-form-label">
                             ${lang.t('llm_min_interval')}
-                            ${state.provider === 'ollama' ? `<span class="sk-llm-tip">(${lang.t('llm_ollama_interval_tip')})</span>` : ''}
+                            ${['ollama', 'llamacpp'].includes(state.provider) ? `<span class="sk-llm-tip">(${lang.t('llm_ollama_interval_tip')})</span>` : ''}
                         </label>
                         <input type="number" step="0.1" min="0.1" class="sk-llm-input" id="llm-min-interval" value="${state.min_interval}" placeholder="${lang.t('llm_min_interval_placeholder')}">
                         ${intervalWarning}
@@ -5993,7 +6095,7 @@ applyBtn.onclick = (e) => {
                         ToastManager.error(lang.t('llm_base_url_placeholder'));
                         return;
                     }
-                    if (state.provider !== 'ollama' && state.provider !== 'custom' && !state.api_key) {
+                    if (!['ollama', 'llamacpp', 'custom'].includes(state.provider) && !state.api_key) {
                         ToastManager.error(lang.t('llm_api_key_required'));
                         return;
                     }
@@ -6033,7 +6135,7 @@ applyBtn.onclick = (e) => {
                 testBtn.onclick = async () => {
                     updateStateFromDOM();
 
-                    if (state.provider !== 'ollama' && state.provider !== 'custom' && !state.api_key) {
+                    if (!['ollama', 'llamacpp', 'custom'].includes(state.provider) && !state.api_key) {
                         ToastManager.error(lang.t('llm_api_key_required'));
                         return;
                     }
@@ -6078,7 +6180,7 @@ applyBtn.onclick = (e) => {
                     }
 
                     // 表单校验
-                    if (state.provider !== 'ollama' && state.provider !== 'custom' && !state.api_key) {
+                    if (!['ollama', 'llamacpp', 'custom'].includes(state.provider) && !state.api_key) {
                         ToastManager.error(lang.t('llm_api_key_required'));
                         return;
                     }
@@ -6199,6 +6301,8 @@ applyBtn.onclick = (e) => {
             case 'gemini': return Icons.get('gemini', '', 20);
             case 'openai': return Icons.get('bot', '', 20);
             case 'ollama': return Icons.get('terminal', '', 20);
+            case 'llamacpp': return Icons.get('cpu', '', 20);
+            case 'mimo': return Icons.get('sparkles', '', 20);
             case 'deepseek': return Icons.get('deepseek', '', 20);
             case 'groq': return Icons.get('zap', '', 20);
             case 'zhipu': return Icons.get('sparkles', '', 20);
@@ -6271,7 +6375,7 @@ applyBtn.onclick = (e) => {
             updateStateFromDOM();
             
             let isValid = true;
-            if (state.provider !== 'ollama' && state.provider !== 'custom' && !state.api_key) isValid = false;
+            if (!['ollama', 'llamacpp', 'custom'].includes(state.provider) && !state.api_key) isValid = false;
             if (!state.base_url) isValid = false;
             if (!state.selected_model) isValid = false;
             
@@ -6287,7 +6391,7 @@ applyBtn.onclick = (e) => {
         };
 
         const renderForm = () => {
-            const providers = ['gemini', 'openai', 'deepseek', 'groq', 'ollama', 'zhipu', 'xflow', 'nvidia', 'custom'];
+            const providers = ['gemini', 'openai', 'deepseek', 'groq', 'ollama', 'llamacpp', 'mimo', 'zhipu', 'xflow', 'nvidia', 'custom'];
             const currentTemplate = templates[state.provider] || {};
             
             // Default Base URLs logic if not set
@@ -6348,7 +6452,6 @@ applyBtn.onclick = (e) => {
                             <input type="text" class="sk-llm-input" id="llm-alias" value="${state.alias}" placeholder="${lang.t('llm_alias_placeholder')}">
                         </div>
 
-                        ${state.provider !== 'ollama' ? `
                         <div class="sk-llm-form-group">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                                 <label class="sk-llm-form-label" style="margin-bottom: 0;">${lang.t('llm_api_key')}</label>
@@ -6359,7 +6462,6 @@ applyBtn.onclick = (e) => {
                                 <span class="sk-pwd-toggle">${Icons.get('eye', '', 14)}</span>
                             </div>
                         </div>
-                        ` : ''}
 
                         <div class="sk-llm-form-group">
                             <label class="sk-llm-form-label">
@@ -6406,7 +6508,7 @@ applyBtn.onclick = (e) => {
                         <div class="sk-llm-form-group">
                             <label class="sk-llm-form-label">
                                 ${lang.t('llm_min_interval')}
-                                ${state.provider === 'ollama' ? `<span class="sk-llm-tip">(${lang.t('llm_ollama_interval_tip')})</span>` : ''}
+                                ${['ollama', 'llamacpp'].includes(state.provider) ? `<span class="sk-llm-tip">(${lang.t('llm_ollama_interval_tip')})</span>` : ''}
                             </label>
                             <input type="number" step="0.1" min="0.1" class="sk-llm-input" id="llm-min-interval" value="${state.min_interval}" placeholder="${lang.t('llm_min_interval_placeholder')}">
                             ${intervalWarning}
@@ -6528,7 +6630,7 @@ applyBtn.onclick = (e) => {
                     }
 
                     // 如果不是 Ollama，对 API Key 进行基础验证
-                    if (state.provider !== 'ollama' && state.provider !== 'custom' && !state.api_key) {
+                    if (!['ollama', 'llamacpp', 'custom'].includes(state.provider) && !state.api_key) {
                         ToastManager.error(lang.t('llm_api_key_required'));
                         return;
                     }
@@ -6570,7 +6672,7 @@ applyBtn.onclick = (e) => {
                 updateStateFromDOM();
                 
                 // 基础验证
-                if (state.provider !== 'ollama' && state.provider !== 'custom' && !state.api_key) {
+                if (!['ollama', 'llamacpp', 'custom'].includes(state.provider) && !state.api_key) {
                     ToastManager.error(lang.t('llm_api_key_required'));
                     return;
                 }
@@ -6614,7 +6716,7 @@ applyBtn.onclick = (e) => {
                 }
 
                 // 表单校验
-                if (state.provider !== 'ollama' && state.provider !== 'custom' && !state.api_key) {
+                if (!['ollama', 'llamacpp', 'custom'].includes(state.provider) && !state.api_key) {
                     ToastManager.error(lang.t('llm_api_key_required'));
                     return;
                 }
